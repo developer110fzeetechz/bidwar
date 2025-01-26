@@ -36,6 +36,11 @@ const UserSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'organisation', 'player'], // Restricts values
         default: 'user',
+    },
+    status: {
+        type: String,
+        default: 'pending',
+        enum: ['pending', 'accepted', 'rejected'] // Restricts values
     }
 
 

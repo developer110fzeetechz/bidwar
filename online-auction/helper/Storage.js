@@ -16,3 +16,8 @@ return {
     age: 0
 }
 }
+
+const getToken =()=>{
+    const storage = new MMKV()
+    return storage.getString('token')
+}

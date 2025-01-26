@@ -70,6 +70,9 @@ export default function Login() {
   const navigateToPlayerRegistration = () => {
     router.push('playerRegistration'); // Change this to your player registration screen route
   };
+  const navigateToTeam = () => {
+    router.push('userRegister'); // Change this to your player registration screen route
+  };
 
   return (
     <View style={[globalStyles.container, styles.form]}>
@@ -127,6 +130,15 @@ export default function Login() {
         style={styles.registerButton}
       >
         Register as Player
+      </Button>
+      <Button
+        mode="outlined"
+        onPress={navigateToTeam}
+        style={[styles.registerButton, {
+          marginTop: 10
+        }]}
+      >
+        Register as Team
       </Button>
     </View>
   );

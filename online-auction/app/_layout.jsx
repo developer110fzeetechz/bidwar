@@ -42,8 +42,20 @@ import { SocketProvider } from '../context/socketContext';
                 options={{
                     headerShown: false,
                 }}
-            /> <Stack.Screen
+            /> 
+            <Stack.Screen
                 name="singleMessage"
+                options={{
+                    headerShown: false,
+                }}
+            />  
+               <Stack.Screen
+                name="userRegister"
+                options={{
+                    headerShown: false,
+                }}
+            />       <Stack.Screen
+                name="puchasedPlayer"
                 options={{
                     headerShown: false,
                 }}

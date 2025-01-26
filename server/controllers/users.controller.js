@@ -1,6 +1,8 @@
 import User from '../schema/users.schema.js'; // Adjust the import path as needed
 import success from '../helper/res.success.js'; // For success responses
 import error from '../helper/res.error.js'; // For error responses
+import biddingGroundSchema from "../schema/bidding.schema.js"
+import { sendMail } from '../helper/sendMail.js';
 
 
 // Create a new user
@@ -62,11 +64,11 @@ const getUserById = async (req, res) => {
 // Update user by ID
 const updateUserById = async (req, res) => {
     try {
-        const { name, phone, email, imageUrl, password, role } = req.body;
+        const { status } = req.body;
 
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            { name, phone, email, imageUrl, password, role },
+            { status },
             { new: true } // Return the updated user
         );
 
@@ -74,11 +76,55 @@ const updateUserById = async (req, res) => {
             return error.BadRequest(res, 'User not found.');
         }
 
-        return success.successResponse(res, updatedUser, 'User updated successfully.');
+        // Respond with the updated user info
+        success.successResponse(res, updatedUser, 'User updated successfully.');
+
+        // Define dynamic email content with colors, images, and user name
+        const acceptedTemplate = `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center;">
+                    <h1>Congratulations, ${updatedUser.name}!</h1>
+                </div>
+                <div style="padding: 20px;">
+                    <p>We are excited to inform you that your application has been accepted.</p>
+                    <p>We look forward to working with you!</p>
+                    <img src="https://via.placeholder.com/600x200?text=Accepted" alt="Accepted" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div style="background-color: #f1f1f1; padding: 10px; text-align: center;">
+                    <p style="font-size: 14px;">If you have any questions, feel free to reach out to us.</p>
+                </div>
+            </div>
+        `;
+        
+        const rejectedTemplate = `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+                <div style="background-color: #FF5733; color: white; padding: 20px; text-align: center;">
+                    <h1>Sorry, ${updatedUser.name}!</h1>
+                </div>
+                <div style="padding: 20px;">
+                    <p>We're sorry to inform you that your application has been rejected.</p>
+                    <p>We appreciate your effort and encourage you to apply again in the future.</p>
+                    <img src="https://via.placeholder.com/600x200?text=Rejected" alt="Rejected" style="width: 100%; height: auto; border-radius: 8px;">
+                </div>
+                <div style="background-color: #f1f1f1; padding: 10px; text-align: center;">
+                    <p style="font-size: 14px;">If you have any questions, feel free to reach out to us.</p>
+                </div>
+            </div>
+        `;
+
+        // Send the email based on the updated status
+        if (status === "accepted") {
+            await sendMail(updatedUser.email, acceptedTemplate);
+        } else {
+            await sendMail(updatedUser.email, rejectedTemplate);
+        }
+
+        return;
     } catch (err) {
         return error.InternalServerError(res, err.message);
     }
 };
+    
 
 // Delete user by ID
 const deleteUserById = async (req, res) => {
@@ -129,5 +175,29 @@ const {_id}=req.user;
         return error.InternalServerError(res,error.message);
     }
 }
+const pruchasedPlayer = async (req, res) => {
+    try {
+        // Fetch all purchased players for the current user
+        const purchasedPlayers = await biddingGroundSchema
+            .find({ soldTo: req.user._id })
+            .populate('playerId') // Populating the player details
+            .lean(); // Converting the Mongoose documents to plain JavaScript objects
 
-export { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser,getProfile };
+        // Map through the results to include the player details and the price (last bid)
+        const response = purchasedPlayers.map(player => {
+            const lastBid = player.bids[player.bids.length - 1]; // Get the last bid
+            return {
+                playerDetails: player.playerId, // Populated player details
+                price: lastBid ? lastBid.bidAmount : null, // Price from the last bid
+                status: player.status,
+                soldAt: player.updatedAt
+            };
+        });
+
+        return success.successResponse(res, response, 'Purchased players retrieved successfully.');
+    } catch (err) {
+        return error.InternalServerError(res, err.message);
+    }
+};
+
+export { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser,getProfile ,pruchasedPlayer};

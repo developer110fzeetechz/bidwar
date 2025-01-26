@@ -78,13 +78,19 @@ export default () => {
 
             const result = await soldToFunctionalities(data)
             global.io.emit("soldTo", result)
-
+            
             setTimeout(async() => {
                 const currentPlayer = await getLatestPlayerWithHighestBasePrice()
                 global.io.emit("currentPlayer", currentPlayer)
     
-            }, 2000);
-            // global.io.emit("outofRace", data)
+            }, 3000);
+            
+        })
+
+        socket.on("lastChance",()=>{
+            socket.emit("lastChance",{
+                message:"Its Your last Chance to Bid for this player"
+            })
         })
         
     })

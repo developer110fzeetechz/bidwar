@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, ImageBackground, ScrollView } from 'react-native';
+import { View, StyleSheet, ImageBackground, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button, Card, Avatar, Paragraph, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { router } from 'expo-router';
 
-const ProfilePage = () => {
+const ProfilePage = (props) => {
+    const { user } = props
     const {logout}=useAuth()
     return (
         <ImageBackground
@@ -18,7 +19,7 @@ const ProfilePage = () => {
                 {/* Profile Header */}
                 <View style={styles.header}>
                     <Avatar.Image size={120} source={{ uri: 'https://example.com/team-logo.png' }} />
-                    <Text style={styles.franchiseName}>Team XYZ Franchise</Text>
+                    <Text style={styles.franchiseName}>Team {user.name}</Text>
                     <Paragraph style={styles.description}>
                         The best cricket franchise with top-tier players and incredible performance!
                     </Paragraph>
@@ -30,11 +31,11 @@ const ProfilePage = () => {
                         <Text style={styles.cardTitle}>User Information</Text>
                         <View style={styles.infoContainer}>
                             <MaterialCommunityIcons name="account" size={20} color="gray" />
-                            <Paragraph style={styles.infoText}>John Doe</Paragraph>
+                            <Paragraph style={styles.infoText}>{user.name}</Paragraph>
                         </View>
                         <View style={styles.infoContainer}>
                             <MaterialCommunityIcons name="email" size={20} color="gray" />
-                            <Paragraph style={styles.infoText}>johndoe@example.com</Paragraph>
+                            <Paragraph style={styles.infoText}>{user.email}</Paragraph>
                         </View>
                     </Card.Content>
                 </Card>
@@ -69,6 +70,14 @@ const ProfilePage = () => {
                     <Card.Content>
                         <Text style={styles.cardTitle}>Team Members</Text>
                         <Paragraph style={styles.infoText}>Player 1, Player 2, Player 3...</Paragraph>
+                    </Card.Content>
+                </Card>   
+                   <Card style={styles.card}>
+                    <Card.Content>
+                     <TouchableOpacity onPress={()=>router.push('puchasedPlayer')}>
+                     <Text style={styles.cardTitle}>Purchsed player</Text>
+                     <Paragraph style={styles.infoText}>Player 1, Player 2, Player 3...</Paragraph>
+                     </TouchableOpacity>
                     </Card.Content>
                 </Card>
 

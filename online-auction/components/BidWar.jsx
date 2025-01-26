@@ -1,23 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet, Image, ScrollView, Alert } from 'react-native';
-import { Text, Button, Card, Avatar, Paragraph, IconButton, Chip } from 'react-native-paper';
+import { Text, Button, Card, Avatar, Paragraph, IconButton, Chip, Dialog, Portal } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getUserDetails } from '../helper/Storage';
 import { useSocket } from '../context/socketContext';
 import NoStartedPage from './NostStarted';
+import BidStatus from './BidsHistory';
+import BidHistory from './BidsHistory';
 
 const AuctionTableScreen = () => {
-  const user = getUserDetails();
+  const user = getUserDetails();  // Fetch user details from storage
   const { socket } = useSocket()
   const [isAuctionStarted, setIsAuctionStarted] = React.useState(false);
   const [currentPlayer, setCurrentPlayer] = React.useState(null);
-  const [currentBid, setCurrentBid] = React.useState(0);
+  const [currentBid, setCurrentBid] = useState(0);
   const [nextBid, setNextBid] = useState(null)
   const [disableButton, setDisableButton] = useState(false)
   const [currentBidderName, setCurrentBidderName] = useState(null)
   const [outofRaceData, setOutofRaceData] = useState(false)
   const [biddingControl, setBiddingControl] = useState(false)
-  // Sample player data
+  const[showlastChances, setShowlastChances] = useState(false)
+  const [bidHistory,setBidHistory] = useState([])
+
+  // Sample player data (use real data from the server)
   const playerData = {
     name: "John Doe",
     role: "Batsman",
@@ -27,7 +32,6 @@ const AuctionTableScreen = () => {
     image: 'https://example.com/player-image.jpg', // Player image URL
     description: "John is an aggressive batsman with great wicketkeeping skills. He has a track record of quick centuries and is a valuable asset to any team."
   };
-
 
   const startAuction = () => {
     socket.emit('start:auction', {
@@ -39,19 +43,26 @@ const AuctionTableScreen = () => {
     console.log("soldTo", data)
     Alert.alert("Sold To", `${data.bidder} for ${data.bidAmount}`)
     setBiddingControl(false)
-    // setOutofRaceData(data)
+  }, [])
+
+  const handleCurrentPlayer = useCallback((data) => {
+    console.log('current player ', data)
+    setCurrentPlayer(data)
+    setCurrentBid(data.basePrice)
+    setBiddingControl(true)
+    setDisableButton(false)
+    setCurrentBid(data.basePrice || 1000)
+    setNextBid(null)
   }, [])
 
   useEffect(() => {
     socket.on('start:auction', (data) => {
       setIsAuctionStarted(true)
     });
-    socket.on('currentPlayer', (data) => {
-      setCurrentPlayer(data)
-      setCurrentBid(data.basePrice)
-      setBiddingControl(true)
-    })
+    socket.on('currentPlayer', handleCurrentPlayer)
+
     socket.on('currentBid', (data) => {
+      
       const nextBid = data.bids[data.bids.length - 1].nextBidAmount
       const currentBid = data.bids[data.bids.length - 1].bidAmount
       const bidderId = data.bids[data.bids.length - 1].bidderId
@@ -64,19 +75,24 @@ const AuctionTableScreen = () => {
       }
       setCurrentBid(currentBid)
       setNextBid(nextBid)
+      setBidHistory(data.bids)
     })
     socket.on('outofRace', handleOutOfRace)
     socket.on('soldTo', handleSoldTo);
+    socket.on('lastChance', (data) => {
+      console.log("lastChance", data)
+      setShowlastChances(true)
+    })
+
     return () => {
       socket.off('start:auction');
-      socket.off('currentPlayer');
+      socket.off('currentPlayer', handleCurrentPlayer);
       socket.off('currentBid');
       socket.off('outofRace', handleOutOfRace);
       socket.off('soldTo', handleSoldTo);
+      socket.off('lastChance');
     }
   }, [])
-
-
 
   const handleOutOfRace = useCallback((data) => {
     console.log("outOfRace", data)
@@ -91,7 +107,6 @@ const AuctionTableScreen = () => {
       bidAmount: nextBid ? nextBid : currentBid
     }
     socket.emit('currentBid', payload)
-    // setDisableButton(true)
   }
 
   const outOfRace = () => {
@@ -107,8 +122,34 @@ const AuctionTableScreen = () => {
       playerId: currentPlayer._id,
     });
   }
+
+  const lastChance = () => {
+    socket.emit('lastChance', {});
+  }
+
+  const hideDialog = () => setShowlastChances(false);
+
+  useEffect(() => {
+    if (showlastChances) {
+      const timer = setTimeout(hideDialog, 2000)
+      return () => clearTimeout(timer);
+    }
+  }, [showlastChances])
+
   return (
     <View style={styles.container}>
+      <Portal>
+        <Dialog visible={showlastChances} onDismiss={hideDialog}>
+          <Dialog.Title>Last Chance</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">This is Your Last chance to bid for this player</Text>
+            <Text variant="bodyMedium" >Any One Else Coming In ?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={hideDialog}>Done</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
       {
         isAuctionStarted ? <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -116,74 +157,59 @@ const AuctionTableScreen = () => {
           {outofRaceData &&
             <Chip icon="information" onPress={() => console.log('Pressed')}>{outofRaceData.bidderName} Out Of Race</Chip>
           }
+
           {/* Player Details Section */}
           <Card style={styles.playerCard}>
+            <View>
+              {/* Only show this button if the user status is 'accepted' */}
+              {user.status === 'accepted' && (
+                <Button style={{ width: 160, alignSelf: 'flex-end' }} mode="contained" onPress={lastChance}>
+                  Last chance
+                </Button>
+              )}
+            </View>
             <Card.Content>
               <View style={styles.playerInfoContainer}>
-                {/* Player Image */}
                 <Avatar.Image size={120} source={{ uri: currentPlayer?.imageUrl }} />
                 <View style={styles.playerDetails}>
                   <Text style={styles.playerName}>{currentPlayer?.name}</Text>
-                  {
-                    currentPlayer?.playerType == "batter" && <>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <MaterialCommunityIcons name="cricket" size={24} color="black" />
-                        <Text>{currentPlayer?.battingDetails?.handedness}</Text>
-                      </View>
-                      <Text>{currentPlayer?.battingDetails?.isWicketkeeper && "Wicket Keeper"}</Text>
-                    </>
-                  }
-                  <Text style={styles.playerRole}>
-
-                  </Text>
                   <Text style={styles.basePrice}>Base Price: {currentPlayer?.basePrice || 1000}</Text>
-                  {
-                    currentBid && <Text style={styles.currentBid}>Current Bid: ${currentBid}</Text>
-                  }
-                  {
-                    currentBid && <Text style={styles.currentBid}>Bidder: {currentBidderName}</Text>
-                  }
-
+                  {currentBid && <Text style={styles.currentBid}>Current Bid: ${currentBid}</Text>}
+                  {currentBid && <Text style={styles.currentBid}>Bidder: {currentBidderName}</Text>}
                   <Text style={styles.description}>{playerData.description}</Text>
                 </View>
               </View>
 
-              {/* Bid Section */}
-              {biddingControl && <>
-
+              {/* Bid Section: Only show buttons if the user status is 'accepted' */}
+              {biddingControl && user.status === 'accepted' && <>
                 <Button mode="contained" style={styles.bidButton} onPress={handleBid} disabled={disableButton}>
                   Place Bid {nextBid ? nextBid : currentBid}
                 </Button>
                 <Button mode="text" style={styles.bidButton} onPress={outOfRace} disabled={disableButton}>
                   Out of Race
                 </Button>
-                <Button mode="text" style={styles.bidButton} onPress={SoldTo} >
+                <Button mode="text" style={styles.bidButton} onPress={SoldTo}>
                   Sold
                 </Button>
               </>}
-            </Card.Content>
 
+            </Card.Content>
           </Card>
 
           {/* Auction History Section (Optional) */}
-          <Card style={styles.historyCard}>
-            <Card.Content>
-              <Text style={styles.historyTitle}>Auction History</Text>
-              <Paragraph style={styles.historyText}>Previous Bidder: Team A - $550,000</Paragraph>
-              <Paragraph style={styles.historyText}>Previous Bidder: Team B - $600,000</Paragraph>
-            </Card.Content>
-          </Card>
+      {bidHistory.length &&    
+            <BidHistory bids={bidHistory}/>
+       }
         </ScrollView> :
           <NoStartedPage role={user.role} startAuction={startAuction} />
       }
-
+    
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
     backgroundColor: '#f7f7f7',
     padding: 16,
     paddingTop: 50
@@ -191,32 +217,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingBottom: 20,
   },
-  teamSummaryContainer: {
-    position: 'absolute',
-    top: 30,
-    right: 16,
-    zIndex: 1,
-    width: 240,
-    elevation: 6,
-  },
-  summaryCard: {
-    borderRadius: 12,
-    backgroundColor: '#1a73e8', // Team-related color or blue
-    padding: 16,
-    marginTop: 10,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  summaryText: {
-    fontSize: 14,
-    color: '#fff',
-    marginBottom: 6,
-  },
   playerCard: {
-    marginTop: 130, // Space for the summary card
+    marginTop: 130,
     borderRadius: 12,
     elevation: 6,
     backgroundColor: '#fff',
@@ -240,11 +242,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  playerRole: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 6,
-  },
   basePrice: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -254,7 +251,7 @@ const styles = StyleSheet.create({
   currentBid: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#f5a623', // Current bid color
+    color: '#f5a623',
     marginTop: 4,
   },
   description: {
@@ -266,7 +263,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 12,
     borderRadius: 30,
-    backgroundColor: '#28a745', // Green for action
+    backgroundColor: '#28a745',
   },
   historyCard: {
     marginTop: 20,

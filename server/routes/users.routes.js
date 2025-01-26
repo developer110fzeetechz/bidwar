@@ -1,6 +1,6 @@
 import express from 'express';
 const router = express.Router();
-import { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser, getProfile } from '../controllers/users.controller.js'
+import { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser, getProfile, pruchasedPlayer } from '../controllers/users.controller.js'
 import { validateToken } from '../helper/middleware.js';
 
 
@@ -12,11 +12,12 @@ router.get('/', getAllUsers);
 
 router.post('/', createUser);
 
+router.get('/getPurchasedPlayer',validateToken, pruchasedPlayer);
 // Get a single user by ID
 
 // Update a user by ID
 
-router.put('/:id', updateUserById);
+router.patch('/:id', updateUserById);
 
 // Delete a user by ID
 
