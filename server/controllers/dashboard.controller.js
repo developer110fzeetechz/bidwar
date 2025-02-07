@@ -2,6 +2,7 @@ import success from '../helper/res.success.js';
 import Player from '../schema/player.schema.js';
 import Users from '../schema/users.schema.js'
 import BiddingGround from '../schema/bidding.schema.js';
+import error from '../helper/res.error.js';
 
 
 const getSummary = async (req, res) => {
@@ -81,9 +82,10 @@ const getSummary = async (req, res) => {
         }
 
         success.successResponse(res, data, "Summary retrieved successfully");
-    } catch (error) {
-        console.error(error);
-        success.errorResponse(res, "Failed to retrieve summary", error);
+    } catch (err) {
+        console.error(err);
+        // success.errorResponse(res, "Failed to retrieve summary", error);
+        error.InternalServerError(res,"Failed to retrieve summary",error)
     }
 };
 

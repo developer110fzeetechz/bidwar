@@ -23,7 +23,7 @@ export default function auctionTable() {
                         <ListsAuctions setStarted={setStarted}  setselectedInternalAuction={setselectedInternalAuction} selectedInternalAuction={selectedInternalAuction}/>
                     </> : <>
 
-                        <NoStartedPage setStarted={setStarted} />
+                        <NoStartedPage setStarted={setStarted} selectedInternalAuction={selectedInternalAuction} setselectedInternalAuction={setselectedInternalAuction} />
                     </>
                 }</>
         }

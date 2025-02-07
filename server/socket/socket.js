@@ -5,6 +5,7 @@ import { getOnlineuser, saveuser } from "../controllers/onlineUser.controller.js
 import { getLatestPlayerWithHighestBasePrice } from "../controllers/player.controller.js"
 import OnlineUser from "../schema/socket.schema.js"
 import AuctionDetails from "../schema/auctions.schema.js"
+import { endAuction, getStartedAuction, updateAuctionDoc } from "../controllers/auction.controller.js"
 
 
 function logTimeExpired() {
@@ -71,10 +72,30 @@ export default () => {
             // const currentPlayer = await getLatestPlayerWithHighestBasePrice();
             // console.log(currentPlayer)
             // Emit "currentPlayer" event to the same room
-            console.log(data)
+            // ----------------update auction doc-------------------
+            // start:auctionTable
+            const started = await updateAuctionDoc(data.auctionId)
+
+            global.io.to(data.roomId).emit("start:auctionTable", data);
+
             const currentPlayer = await playerToBidGround(data.auctionId)
-            console.log(currentPlayer)
+
             global.io.to(data.roomId).emit("currentPlayer", currentPlayer);
+        })
+        socket.on("isAuctionStarted", async (data) => {
+            console.log('isAuctionStarted', data)
+            const started = await getStartedAuction(data.auctionId)
+            console.log(started)
+            const isStarted = started.status === "InProgress"
+            const currentPlayer = await playerToBidGround(data.auctionId)
+
+            io.to(data.socketId).emit("isAuctionStarted", {
+                isStarted,
+            });
+            if (isStarted) {
+
+                io.to(data.socketId).emit("currentPlayer", currentPlayer);
+            }
         })
 
         socket.on("join:room", async (data) => {
@@ -141,7 +162,15 @@ export default () => {
                 message: "Its Your last chance to Bid for this player"
             });
         })
-
+        socket.on("EndAuction",async (data) => {
+            console.log('End Auction', data)
+            const complete =await endAuction(data.auctionId)
+            console.log(complete)
+            global.io.to(data.roomId).emit('auctionEnd',{
+                complete,
+                message: "Auction has ended"
+            })
+        })
     })
-    return global.io;
+
 }

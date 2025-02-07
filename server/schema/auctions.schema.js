@@ -17,13 +17,12 @@ const AuctionSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['Pending', 'In Progress', 'Completed'],
+            enum: ['Pending', 'InProgress', 'Completed'],
             default: 'Pending'
         },
         roomId:{
           
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'auction' ,// Assuming Room is a model defined elsewhere
+            type: String,
             required: true
         }
 

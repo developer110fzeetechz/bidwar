@@ -54,7 +54,8 @@ const createAuction = async (req, res) => {
 const getupcomingAuctions = async (req,res) => {
     
     try {
-        const auctions = await AuctionModel.find({ status: "Pending" })
+        const auctions = await AuctionModel.find({ status:{ $ne: 'Completed' } })
+        console.log(auctions)
         success.successResponse(res, auctions, 'All active Auction ')
     } catch (err) {
         error.InternalServerError(res, err.message)
@@ -62,4 +63,28 @@ const getupcomingAuctions = async (req,res) => {
 
 }
 
-export { createAuction, getupcomingAuctions }
+const getSingleAuction =async(req,res)=>{
+    try {
+        const auction = await AuctionModel.findById(req.params.id)
+        if(!auction) return error.NOT_FOUND(res, 'Auction not found')
+            console.log(auction)
+        success.successResponse(res, auction, 'Single Auction ')
+    } catch (err) {
+        error.InternalServerError(res, err.message)
+    }
+
+}
+const updateAuctionDoc = async(auctionId)=>{
+    console.log({auctionId})
+    
+    return await AuctionModel.findOneAndUpdate({ _id:auctionId }, { status: "InProgress" }, { new: true });
+}
+
+const getStartedAuction  = async (auctionId)=>{
+return await AuctionModel.findOne({_id:auctionId})
+}
+const endAuction =async(auctionId)=>{
+return await AuctionModel.findOneAndUpdate({ _id:auctionId }, { status: "Completed" }, { new: true })
+}
+
+export { createAuction, getupcomingAuctions ,getSingleAuction ,updateAuctionDoc ,getStartedAuction ,endAuction}

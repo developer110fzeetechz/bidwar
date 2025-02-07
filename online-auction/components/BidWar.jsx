@@ -11,7 +11,7 @@ import { Avatar, Button, Card, Chip, Title, Snackbar, Paragraph, Icon } from 're
 import { ProgressBar } from 'react-native-paper';
 import MyDialog, { MyDialogNotify } from './Dialog'
 import CustomSnackbar from './CustomSnackbar'
-import { router } from 'expo-router'
+import { router, useFocusEffect } from 'expo-router'
 
 
 export default function BidWar({ auctionDetails }) {
@@ -40,6 +40,15 @@ export default function BidWar({ auctionDetails }) {
 
 
   const handleCurrentPlayer = useCallback((data) => {
+    console.log('current Player',data)
+      if((!data.data) && user.role==="admin"){
+        console.log('inside null')
+        socket.emit('EndAuction',{
+          roomId: auctionDetails.roomId,
+          auctionId: auctionDetails._id,
+        })
+        return 
+      }
     setNotifyDetails(null)
     setVisibleModal(false)
     if (!data.data) setCurrentActivePlayer(null)
@@ -173,10 +182,34 @@ export default function BidWar({ auctionDetails }) {
     }
   }, [noitfyDetails]);
 
+  useFocusEffect(
+    useCallback(() => {
+     
+      if (!isStarted) {
+
+        socket.emit('isAuctionStarted', {
+          roomId: auctionDetails.roomId,
+          auctionId: auctionDetails._id,
+          socketId: socket.id
+        })
+      }
+
+      return () => {
+        console.log('Tab is unfocused');
+      };
+    }, [])
+  );
+
   useEffect(() => {
     if (socket) {
       socket.on('user:joined', (data) => {
         showToast(`${data.userId.name} Joined In Auction`);
+      });
+
+
+      socket.on('start:auctionTable', (data) => {
+        showToast('auction started')
+        setIsStarted(true)
       });
       socket.on('currentPlayer', handleCurrentPlayer);
       socket.on('currentBid', getCurrentBid);
@@ -185,6 +218,19 @@ export default function BidWar({ auctionDetails }) {
         console.log({ unSold: data })
         setVisibleModal(true)
       });
+      socket.on('auctionEnd',(data)=>{
+        console.log('Auction End', data)
+        setIsStarted(false)
+        showToast('Auction Ended')
+       router.replace('(home)')
+
+      })
+      socket.on('isAuctionStarted', (data) => {
+        if (data.isStarted) {
+          setIsStarted(true)
+          showToast('Auction Started')
+        }
+      })
       socket.on('lastChance', lastChanceHanlder);
       socket.on('outOfRace', outOfRaceHandler)
 
@@ -192,6 +238,8 @@ export default function BidWar({ auctionDetails }) {
 
       return () => {
         socket.off('user:joined');
+        socket.off('start:auctionTable');
+        socket.off('start:isAuctionStarted');
         socket.off('currentPlayer');
         socket.off('currentBid');
         socket.off('lastChance', lastChanceHanlder);
@@ -201,7 +249,7 @@ export default function BidWar({ auctionDetails }) {
 
       };
     }
-  }, [socket]);
+  }, [socket, auctionDetails]);
 
 
 
@@ -215,8 +263,8 @@ export default function BidWar({ auctionDetails }) {
           <View>
             <Card>
               <Card.Title title="Team summary" />
-              <Button style={{width:150}} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
-                Purchased 
+              <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
+                Purchased
               </Button>
               <>
 
@@ -252,24 +300,31 @@ export default function BidWar({ auctionDetails }) {
                 {noitfyDetails && <View style={styles.notify}>
                   <Text>{noitfyDetails}</Text>
                 </View>}
-                <Button mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
-                  Make Bid
-                </Button>
-                <Button mode="contained" onPress={() => outOfRace()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
-                  Out Of Race
-                </Button>
-                <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
+                {
+                  user.role === "organisation" && <>
+                    <Button mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
+                      Make Bid
+                    </Button>
+                    <Button mode="contained" onPress={() => outOfRace()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
+                      Out Of Race
+                    </Button>
+                  </>
+                }
+                {
+                  user.role === "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
 
-                  <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
-                    {
-                      !currentBidder ? "Unsold.." : "Sold..."
-                    }
+                    <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
+                      {
+                        !currentBidder ? "Unsold.." : "Sold..."
+                      }
 
-                  </Button>
-                  <Button style={{ width: '42%' }} mode="contained" onPress={() => lastChance()} >
-                    Last Chance
-                  </Button>
-                </View>
+                    </Button>
+                    <Button style={{ width: '42%' }} mode="contained" onPress={() => lastChance()} >
+                      Last Chance
+                    </Button>
+                  </View>
+                }
+
 
 
 
@@ -294,16 +349,16 @@ export default function BidWar({ auctionDetails }) {
               <Card.Content>
                 <Title style={styles.title}>Auction Details</Title>
                 <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Title:</Text> {auctionDetails.title}
+                  <Text style={styles.label}>Title:</Text> {auctionDetails?.title}
                 </Paragraph>
                 <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Description:</Text> {auctionDetails.description}
+                  <Text style={styles.label}>Description:</Text> {auctionDetails?.description}
                 </Paragraph>
                 <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Auction Date:</Text> {new Date(auctionDetails.auctionDate).toLocaleDateString()}
+                  <Text style={styles.label}>Auction Date:</Text> {new Date(auctionDetails?.auctionDate).toLocaleDateString()}
                 </Paragraph>
                 <Paragraph style={styles.paragraph}>
-                  <Text style={styles.label}>Status:</Text> {auctionDetails.status}
+                  <Text style={styles.label}>Status:</Text> {auctionDetails?.status}
                 </Paragraph>
               </Card.Content>
             </Card>

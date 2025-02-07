@@ -9,15 +9,18 @@ import { useSocket } from '../context/socketContext';
 import Toast from 'react-native-toast-message';
 import { getUserDetails } from '../helper/Storage';
 import { useAuth } from '../context/AuthContext';
+import useAxios from '../helper/useAxios';
 
-const NoStartedPage = ({ role, startAuction,setStarted }) => {
+const NoStartedPage = ({ role, startAuction,setStarted,selectedInternalAuction, setselectedInternalAuction }) => {
   const { selectedAuction, setSelectedAuction, auctionData } = useData()
   const [auctionList,setAuctionList]=useState([])
   console.log('NoStartedPage')
   const [selectOne, setselectOne] = useState('')
   const user = getUserDetails()
   const { socket } = useSocket()
+  const {fetchData}=useAxios()
   const {mydetails, userRole}=useAuth()
+  console.log(auctionData)
 
   useEffect(()=>{
     if(userRole==="organisation"){
@@ -29,18 +32,30 @@ const NoStartedPage = ({ role, startAuction,setStarted }) => {
 
     }
   },[mydetails, userRole])
-  const joinRoom = () => {
+  const joinRoom = async() => {
     if (!selectOne) {
       ToastAndroid.show('Please select Event!', ToastAndroid.SHORT);
       return 0;
     }
-    socket.emit("join:room", {
-      username: user.name,
-      auctionId: selectOne,
-      userId: user._id,
-      
+    const {data,status} = await fetchData({
+      url: `api/auction/singleAuction/${selectOne}`,
+      method: 'GET',
+    
     })
-    setStarted(true)
+    if(status){
+   
+      socket.emit("join:room", {
+        username: user.name,
+        auctionId: selectOne,
+        userId: user._id,
+        
+      })
+      console.log(data)
+      setselectedInternalAuction(data)
+      setStarted(true)
+    }
+   
+  
   }
   return (
     <View style={styles.container}>
@@ -64,6 +79,7 @@ const NoStartedPage = ({ role, startAuction,setStarted }) => {
           options={auctionList || []}
           value={selectOne}
           onSelect={(data) => {
+            console.log(data)
             setselectOne(data)
           }}
         />
