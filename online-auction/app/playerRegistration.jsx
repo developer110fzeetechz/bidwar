@@ -31,10 +31,28 @@ export default function PlayerRegistration() {
         basePrice: 1000
     }
     const [formData, setFormData] = useState(initalFormData);
+    const[auctionData,setAuctionData]=useState([])
 
     const [basePrice, setBasePrice] = useState(1000)
+    const[RunningAuction,setRunningAuction]=useState('')
     const { fetchData, error, loading } = useAxios();
+    const getAuctionLists = async ()=>{
+const res =await fetchData({
+    url: '/api/auction',
+    method: 'GET',
+})
+const resData = res.data.map((x)=>{
+    return{
+        label:x.title,
+        value:x._id,
+    }
+})
+setAuctionData(resData)
+    }
 
+    useEffect(() => {
+        getAuctionLists();
+    }, []);
 
     useEffect(() => {
         if (error) {
@@ -68,7 +86,8 @@ export default function PlayerRegistration() {
             email,
             playerType: playerType.toLowerCase(),
             imageUrl,
-            basePrice:basePrice
+            basePrice:basePrice,
+            auctionId:RunningAuction
         };
 
         if (playerType === 'Batter') {
@@ -210,7 +229,19 @@ export default function PlayerRegistration() {
                 options={OPTIONS}
                 value={basePrice}
                 onSelect={setBasePrice}
+            /> 
+            <View style={{
+                marginTop:10
+            }}>
+            <Dropdown
+                label="Auction Lists"
+                placeholder="Select Auction List"
+                options={auctionData}
+                value={RunningAuction}
+                onSelect={setRunningAuction}
+              
             />
+            </View>
             {/* Submit Button */}
             <Button
                 mode="contained"

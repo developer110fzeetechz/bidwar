@@ -41,6 +41,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: 'pending',
         enum: ['pending', 'accepted', 'rejected'] // Restricts values
+    },
+    auctionId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'auction'
     }
 
 

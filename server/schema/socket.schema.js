@@ -13,7 +13,7 @@ const socketSchema = new mongoose.Schema(
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId, // This references the 'User' model
-      ref: "User", // Ensure 'User' model is defined and imported in the file
+      ref: "user", // Ensure 'User' model is defined and imported in the file
       required: true, // Optional: make it required if every socket connection needs to be tied to a user
     },
     image: {

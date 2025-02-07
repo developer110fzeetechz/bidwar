@@ -7,6 +7,7 @@ import BiddingGround from "../schema/bidding.schema.js"
 
 
 
+
 const createPlayer = async (req, res) => {
   console.log(req.body);
   const { email, phone } = req.body;
@@ -43,6 +44,7 @@ const getAllPlayer = async (req, res) => {
 
 const getLatestPlayerWithHighestBasePrice = async () => {
   try {
+    // const player = await playerToBidGround()
     const players = await Player.aggregate([
       // Perform a lookup to find related documents in the BiddingGround collection
       {
@@ -73,7 +75,7 @@ const getLatestPlayerWithHighestBasePrice = async () => {
     ]);
 
     // Return the player if found, or null if no matching player exists
-    console.log(players.length > 0 ? players[0] : null           )
+    console.log(players.length > 0 ? players[0] : null)
     return players.length > 0 ? players[0] : null;
   } catch (error) {
     console.error("Error fetching player not in BiddingGround:", error.message);
@@ -82,6 +84,26 @@ const getLatestPlayerWithHighestBasePrice = async () => {
 };
 
 
+const getsinglePlayer =async (req,res)=>{
+ const playerId = req.params.id;
+try {
+  const  player = await Player.findOne({_id:playerId})
+  const auctionId = player.auctionId
+  const bidsHistory= await BiddingGround.findOne({
+    playerId,
+    auctionId
+  })
+const resData = {
+  player,
+  bid:bidsHistory
+}
+ success.successResponse(res, resData, 'Player retrieved successfully');
+} catch (error) {
+  
+  return ErrorResponse.InternalServerError(res, error.message);
+}
+}
 
 
-export { createPlayer, getAllPlayer, getLatestPlayerWithHighestBasePrice }
+
+export { createPlayer, getAllPlayer, getLatestPlayerWithHighestBasePrice ,getsinglePlayer }

@@ -6,16 +6,24 @@ import Dashboard from '../../components/Dashboard'
 import { useAuth } from '../../context/AuthContext'
 import useAxios from '../../helper/useAxios'
 import { Appbar, Avatar } from 'react-native-paper'
-import { getUserDetails } from '../../helper/Storage'
+import { getUserDetails, isAdmin } from '../../helper/Storage'
 import { useSocket } from '../../context/socketContext'
+import { Dropdown } from 'react-native-paper-dropdown'
+import { useData } from '../../context/useData'
+import { widthPerWidth } from '../../helper/dimensions'
+
+// import * as Device from 'expo-device';
 export default function home() {
   const [dashboard, setDashboard] = useState({})
   const { fetchData } = useAxios()
   const { socket, isConnected } = useSocket();
+  const{selectedAuction,setSelectedAuction,auctionData,setAuctionData ,}=useData()
+  const {userRole, mydetails}=useAuth()
+  const[myAuctionList,setMyAuctionList]=useState([])
 
   const getAllData = async () => {
     const { status, data } = await fetchData({
-      url: "/api/dashboard",
+      url: `/api/dashboard?auctionId=${selectedAuction}`,
       method: "GET"
     })
     if (status) {
@@ -25,11 +33,26 @@ export default function home() {
 
   useEffect(() => {
     getAllData()
-  }, [])
+  }, [selectedAuction])
 
+ useEffect(()=>{
+console.log(auctionData)
+if(userRole==="organisation"){
 
+  const auctionId = JSON.parse(mydetails).auctionId
+
+  const filteredData= auctionData.filter((x)=>x.value===auctionId)
+  setMyAuctionList(filteredData)
+  console.log({filteredData})
+}
+if(userRole==="admin"){
+  setMyAuctionList(auctionData)
+
+}
+ },[userRole, mydetails ,auctionData])
+  
   const user = getUserDetails()
-
+ 
   useEffect(() => {
     if (socket && isConnected) {
 
@@ -43,17 +66,24 @@ export default function home() {
 
   return (
     <View style={styles.container}>
-      <Text style={{
-        marginTop: 30,
-        fontSize: 20,
-        fontWeight: 'bold',
-      }}>{JSON.stringify(isConnected)}</Text>
-      <Appbar.Header>
+  
+      <Appbar.Header style={{
+        justifyContent:"space-between", paddingLeft:20
+      }}>
         {/* <Appbar.BackAction onPress={_goBack} /> */}
-        <Appbar.Content title={user.name} titleStyle={{
-          fontSize: 18,
-          fontWeight: 'bold',
-        }} />
+       <View style={{
+        width:widthPerWidth(70)
+       }}>
+       <Dropdown
+                label="Select Events"
+                placeholder="Select Events"
+                options={myAuctionList || []}
+                value={selectedAuction}
+                onSelect={setSelectedAuction}
+            /> 
+       </View>
+
+      
         <Avatar.Image
           size={45}
           source={{ uri: user.imageUrl || "https://www.esri.com/content/dam/esrisites/en-us/user-research-testing/assets/user-research-testing-overview-banner-fg.png" }}
@@ -62,7 +92,9 @@ export default function home() {
 
         />
       </Appbar.Header>
-
+<View>
+  <Text>{userRole}</Text>
+</View>
       <Dashboard dashboard={dashboard} />
     </View>
   )
@@ -70,6 +102,6 @@ export default function home() {
 
 const styles = StyleSheet.create({
   container: {
-
+paddingTop:10
   }
 })

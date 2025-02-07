@@ -1,4 +1,5 @@
 import BiddingGround from "../schema/bidding.schema.js"
+import Player from "../schema/player.schema.js";
 
 const addBid = async (data) => {
   const { playerId, bidderId, bidAmount, bidderName } = data
@@ -31,6 +32,57 @@ const addBid = async (data) => {
   }
 };
 
+const playerToBidGround = async (roomId) => {
+  console.log({ roomId });
+
+  // Step 1: Check if there's already a player with "open" status in BiddingGround for this auction
+  const existingOpenPlayer = await BiddingGround.findOne({ status: "open", auctionId: roomId }).populate("playerId");
+
+  if (existingOpenPlayer) {
+    return {
+      message: "Player already in battleground with open status",
+      data: {
+        player: existingOpenPlayer.playerId,  // Player details
+        battleground: existingOpenPlayer     // Battleground details
+      }
+    };
+  }
+
+  // Step 2: Find a new player who is NOT already in BiddingGround for this auction
+  const assignedPlayers = await BiddingGround.distinct("playerId", { auctionId: roomId });
+
+  const newPlayer = await Player.findOne({
+    _id: { $nin: assignedPlayers }, // Exclude players already in this auction's BiddingGround
+    auctionId: roomId, // Ensure the player belongs to the same auction
+  });
+
+  if (newPlayer) {
+    // Add new player to BiddingGround
+    const playerRecord = new BiddingGround({
+      playerId: newPlayer._id,
+      status: "open", 
+      bids: [],
+      auctionId: roomId,
+    });
+
+    await playerRecord.save();
+
+    return {
+      message: "New player joined the battleground",
+      data: {
+        player: newPlayer,          // Player details
+        battleground: playerRecord  // Battleground details
+      }
+    };
+  }
+
+  // Step 3: No available player found
+  return { message: "No available player found", data: null };
+};
+
+
+
+
 
 const soldToFunctionalities = async (data) => {
   const { playerId } = data
@@ -56,4 +108,18 @@ const soldToFunctionalities = async (data) => {
     bidAmount: lastBid.bidAmount,
   };
 }
-export { addBid, soldToFunctionalities }
+
+const unSoldFunctionalities =async(body)=>{
+  const {playerId ,auctionId} = body
+try {
+  const filter = { playerId ,auctionId };
+const update = { status: "unSold" };
+const doc = await BiddingGround.findOneAndUpdate(filter, update, {
+  new: true
+});
+return doc
+} catch (error) {
+  
+}
+}
+export { addBid, soldToFunctionalities ,playerToBidGround ,unSoldFunctionalities }

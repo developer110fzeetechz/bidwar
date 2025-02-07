@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, TextInput } from 'react-native';
+import { FlatList, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import useAxios from '../helper/useAxios';
 import { Card, Text, Paragraph, Avatar, Chip, Appbar } from 'react-native-paper';
 import { widthPerWidth } from '../helper/dimensions';
+import { useData } from '../context/useData';
 
 export default function Lists() {
   const { name } = useLocalSearchParams();
   const { fetchData } = useAxios();
+  const { selectedAuction, setSelectedAuction, auctionData } = useData()
   const [listData, setListData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,9 +18,10 @@ export default function Lists() {
   const getData = async () => {
     try {
       const { data } = await fetchData({
-        url: `/api/dashboard?type=${name}`,
+        url: `/api/dashboard?type=${name}&auctionId=${selectedAuction}`,
         method: 'GET',
       });
+      console.log(data)
       setListData(data);
       setFilteredData(data);
     } catch (error) {
@@ -41,28 +44,54 @@ export default function Lists() {
       setFilteredData(filtered);
     }
   };
+  const backgoundC = (status) => {
+    switch (status) {
+      case "sold":
+        return "#4CAF50";
+      case "unSold":
+        return "#F44336";
+      default:
+        return "#FFC107";
+    }
+  }
 
   const renderPlayer = ({ item }) => (
-    <Card style={styles.card}>
+    <Card style={styles.card} onPress={() => router.push(`playerDetails?playerId=${item._id}`)}>
       <Card.Title
         title={item.name}
         left={(props) => (
-          <Avatar.Text {...props} label={item.name.charAt(0).toUpperCase()} />
+          <Avatar.Image size={50} source={{ uri: item.imageUrl }} />
         )}
         right={(props) => (
-          <Chip style={{ marginRight: 10 }} onPress={() => console.log('Pressed')}>
-            {item.playerType?.toUpperCase()}
-          </Chip>
+          <>{name !== "Teams" && <View>
+            <Chip style={{ marginRight: 10 }} onPress={() => console.log('Pressed')}>
+              {item.playerType?.toUpperCase()}
+            </Chip>
+            <View style={{
+              borderRadius: 5, marginRight: 10, marginTop: 5, paddingVertical: 5,
+              backgroundColor: backgoundC(item?.biddingDetails?.status)
+            }}>
+              <Text style={{ textAlign: "center", fontSize: 15 }}>{item?.biddingDetails?.status || "Pending"}</Text>
+            </View>
+          </View>}</>
         )}
       />
-      <Card.Content>
+      {name == "Teams" ? <Card.Content>
         <Paragraph>Email: {item.email}</Paragraph>
-        <Paragraph>Age: {item.age}</Paragraph>
-        <Paragraph>Batting Hand: {item.battingDetails?.handedness}</Paragraph>
-        <Paragraph>
-          Wicketkeeper: {item.battingDetails?.isWicketkeeper ? 'Yes' : 'No'}
-        </Paragraph>
+
       </Card.Content>
+
+        :
+        <Card.Content>
+          <Paragraph>Email: {item.email}</Paragraph>
+          <Paragraph>Age: {item.age}</Paragraph>
+
+          <Paragraph>Batting Hand: {item.battingDetails?.handedness}</Paragraph>
+          <Paragraph>
+            Wicketkeeper: {item.battingDetails?.isWicketkeeper ? 'Yes' : 'No'}
+          </Paragraph>
+        </Card.Content>}
+
     </Card>
   );
 

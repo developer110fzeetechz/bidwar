@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { StyleSheet, FlatList, View } from "react-native";
 import {
   Card,
@@ -10,29 +10,34 @@ import {
   Provider,
   IconButton,
 } from "react-native-paper";
+import { useFocusEffect } from "@react-navigation/native";
 import useAxios from "../../helper/useAxios";
 import Header from "../../components/Header";
+import { useData } from "../../context/useData";
 
 export default function TeamList() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [visible, setVisible] = useState(false);
+  const { selectedAuction } = useData();
 
   const { fetchData } = useAxios();
 
-  useEffect(() => {
-    const getTeam = async () => {
-      const res = await fetchData({
-        url: "/api/users",
-        method: "GET",
-      });
-      if (res.status) {
-        setTeams(res.data);
-      }
-    };
+  const getTeam = async () => {
+    const res = await fetchData({
+      url: `/api/users?auctionId=${selectedAuction}`,
+      method: "GET",
+    });
+    if (res.status) {
+      setTeams(res.data);
+    }
+  };
 
-    getTeam();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getTeam(); // Fetch data when the screen is focused
+    }, [selectedAuction])
+  );
 
   // Helper function for dynamic status colors
   const getStatusColor = (status) => {
@@ -60,13 +65,11 @@ export default function TeamList() {
   };
 
   const updateStatus = (id, newStatus) => {
-    // Update the status of the selected team in the state
     const updatedTeams = teams.map((team) =>
       team._id === id ? { ...team, status: newStatus } : team
     );
     setTeams(updatedTeams);
 
-    // Optionally, call API to update the status in the backend
     fetchData({
       url: `/api/users/${id}`,
       method: "PATCH",
@@ -219,15 +222,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   acceptedButton: {
-    backgroundColor: "#e6f7e6", // Light green background
+    backgroundColor: "#e6f7e6",
     borderRadius: 20,
   },
   rejectedButton: {
-    backgroundColor: "#fbeaea", // Light red background
+    backgroundColor: "#fbeaea",
     borderRadius: 20,
   },
   pendingButton: {
-    backgroundColor: "#fff4e6", // Light orange background
+    backgroundColor: "#fff4e6",
     borderRadius: 20,
   },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, SectionList, ActivityIndicator, Image } from 'react-native';
+import { StyleSheet, Text, View, SectionList, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import useAxios from '../helper/useAxios';
 import { Appbar } from 'react-native-paper';
@@ -42,16 +42,16 @@ export default function PurchasedPlayer() {
     { title: '🎯 Bowlers', data: categorizedPlayers.bowler },
     { title: '🔄 Allrounders', data: categorizedPlayers.allrounder },
   ];
-const _goBack=()=>{
-  router.back()
-}
+  const _goBack = () => {
+    router.back()
+  }
   return (
     <View style={styles.container}>
-       <Appbar.Header>
-      <Appbar.BackAction onPress={_goBack} />
-      <Appbar.Content title="Purchased Player" />
-    
-    </Appbar.Header>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={_goBack} />
+        <Appbar.Content title="Purchased Player" />
+
+      </Appbar.Header>
       {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color="#4CAF50" />
@@ -68,8 +68,9 @@ const _goBack=()=>{
           )}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
-            <View style={styles.playerCard}>
+            <TouchableOpacity style={styles.playerCard} onPress={() => router.push(`playerDetails?playerId=${item.playerDetails._id}`)}>
               {/* User Image */}
+              {JSON.stringify(item)}
               <Image
                 source={{
                   uri: item.playerDetails.imageUrl || 'https://via.placeholder.com/100',
@@ -84,7 +85,7 @@ const _goBack=()=>{
                 {/* Highlighted Price */}
                 <Text style={styles.playerPrice}>Price: ₹{item.price}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={() => (
             <Text style={styles.noDataText}>No players purchased yet.</Text>

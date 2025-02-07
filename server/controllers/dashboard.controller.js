@@ -1,50 +1,90 @@
 import success from '../helper/res.success.js';
 import Player from '../schema/player.schema.js';
 import Users from '../schema/users.schema.js'
+import BiddingGround from '../schema/bidding.schema.js';
 
 
-const getSuymmary = async (req, res) => {
-  const {type}= req.query;
-  console.log({type})
+const getSummary = async (req, res) => {
+    const { type, auctionId } = req.query;
+
     try {
-        const players = await Player.find();
-        const wicketKeepers = await Player.find({ "battingDetails.isWicketkeeper": true });
-        const batsman = await Player.find({ playerType: 'batter' });
-        const bowlingDetails = await Player.find({ playerType: 'bowler' });
-        const allrounder = await Player.find({ playerType: 'allrounder' });
-        const registeredTeam = await Users.find({ role: 'organisation' });
+        let data;
 
+        // Define common query filters
+        const auctionFilter = auctionId ? { auctionId } : {};
 
-        let  data = {
-            registeredPlayers: players.length,
-            wicketKeepersCount: wicketKeepers.length,
-            batsman: batsman.length,
-            bowlers: bowlingDetails.length,
-            allrounders: allrounder.length,
-            registeredTeams: registeredTeam.length,
+        if (type) {
+            let players;
+
+            switch (type) {
+                case "Registered Players":
+                    players = await Player.find(auctionFilter);
+                    break;
+                case "Wicketkeepers":
+                    players = await Player.find({ "battingDetails.isWicketkeeper": true, ...auctionFilter });
+                    break;
+                case "Batsman":
+                    players = await Player.find({ playerType: "batter", ...auctionFilter });
+                    break;
+                case "Bowlers":
+                    players = await Player.find({ playerType: "bowler", ...auctionFilter });
+                    break;
+                case "All Rounders":
+                    players = await Player.find({ playerType: "allrounder", ...auctionFilter });
+                    break;
+                case "Teams":
+                    data = await Users.find({ role: "organisation", status: "accepted", ...auctionFilter });
+                    return success.successResponse(res, data, "Teams retrieved successfully");
+                default:
+                    return success.errorResponse(res, "Invalid type provided");
+            }
+
+            // Fetch bidding details for each player
+            const playersWithBids = await Promise.all(players.map(async (player) => {
+                const biddingDetails = await BiddingGround.findOne({ playerId: player._id });
+                return { ...player.toObject(), biddingDetails };
+            }));
+
+            return success.successResponse(res, playersWithBids, `${type} retrieved successfully`);
+        } else {
+            // Fetch all player categories
+            const [
+                players,
+                wicketKeepers,
+                batsmen,
+                bowlers,
+                allrounders,
+                registeredTeams
+            ] = await Promise.all([
+                Player.find(auctionFilter),
+                Player.find({ "battingDetails.isWicketkeeper": true, ...auctionFilter }),
+                Player.find({ playerType: "batter", ...auctionFilter }),
+                Player.find({ playerType: "bowler", ...auctionFilter }),
+                Player.find({ playerType: "allrounder", ...auctionFilter }),
+                Users.find({ role: "organisation", ...auctionFilter })
+            ]);
+
+            // Fetch bidding details for each player
+            const playersWithBids = await Promise.all(players.map(async (player) => {
+                const biddingDetails = await BiddingGround.findOne({ playerId: player._id });
+                return { ...player.toObject(), biddingDetails };
+            }));
+
+            data = {
+                registeredPlayers: playersWithBids,
+                wicketKeepersCount: wicketKeepers.length,
+                batsman: batsmen.length,
+                bowlers: bowlers.length,
+                allrounders: allrounders.length,
+                registeredTeams: registeredTeams.length,
+            };
         }
-        if(type=="Registered Players") {
-            data=players
-        }if(type=="Wicketkeepers") {
-            data=wicketKeepers
-        }
-        if(type=="All Rounders") {
-            data=allrounder
-        }
-        if(type=="Batsman") {
-            data=batsman
-        }
-        if(type=="Bowlers") {
-            data=bowlingDetails
-        }
-        if(type=="Teams") {
-            data=registeredTeam
-        }
-        success.successResponse(res, data, 'Summary retrieved successfully')
+
+        success.successResponse(res, data, "Summary retrieved successfully");
     } catch (error) {
-        console.log(error)
+        console.error(error);
+        success.errorResponse(res, "Failed to retrieve summary", error);
     }
+};
 
-}
-
-export { getSuymmary }
+export { getSummary }

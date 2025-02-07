@@ -75,7 +75,7 @@ const ProfilePage = (props) => {
                    <Card style={styles.card}>
                     <Card.Content>
                      <TouchableOpacity onPress={()=>router.push('puchasedPlayer')}>
-                     <Text style={styles.cardTitle}>Purchsed player</Text>
+                     <Text style={styles.cardTitle}>Purchased player</Text>
                      <Paragraph style={styles.infoText}>Player 1, Player 2, Player 3...</Paragraph>
                      </TouchableOpacity>
                     </Card.Content>

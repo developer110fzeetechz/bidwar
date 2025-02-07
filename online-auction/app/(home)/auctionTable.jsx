@@ -2,16 +2,30 @@ import { StyleSheet, Text, View } from 'react-native'
 import React, { useState } from 'react'
 import NoStartedPage from '../../components/NostStarted'
 import AuctionTableScreen from '../../components/BidWar'
+import { getUserDetails } from '../../helper/Storage'
+import ListsAuctions from '../../components/ListsAuctions'
+import { useAuth } from '../../context/AuthContext'
 
 export default function auctionTable() {
-    const [started, setStarted] = useState(true)
+    const [started, setStarted] = useState(false)
+    const {userRole,mydetails}=useAuth()
+     const [selectedInternalAuction, setselectedInternalAuction] = useState(null);
+
+
     return (
         <View>{
             started ? (
                 <>
-                    <AuctionTableScreen/>
+                    <AuctionTableScreen auctionDetails={selectedInternalAuction} />
                 </>) :
-                <NoStartedPage />
+                <>{
+                    userRole === "admin" ? <>
+                        <ListsAuctions setStarted={setStarted}  setselectedInternalAuction={setselectedInternalAuction} selectedInternalAuction={selectedInternalAuction}/>
+                    </> : <>
+
+                        <NoStartedPage setStarted={setStarted} />
+                    </>
+                }</>
         }
         </View>
     )

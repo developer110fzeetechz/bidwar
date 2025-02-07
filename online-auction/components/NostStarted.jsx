@@ -1,10 +1,47 @@
-import React from 'react';
-import { View, StyleSheet, Image, Text } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Image, Text, ToastAndroid } from 'react-native';
 import { Button, IconButton, Paragraph } from 'react-native-paper';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import { heightPerHeight } from '../helper/dimensions';
+import { heightPerHeight, widthPerWidth } from '../helper/dimensions';
+import { Dropdown } from 'react-native-paper-dropdown';
+import { useData } from '../context/useData';
+import { useSocket } from '../context/socketContext';
+import Toast from 'react-native-toast-message';
+import { getUserDetails } from '../helper/Storage';
+import { useAuth } from '../context/AuthContext';
 
-const NoStartedPage = ({ role, startAuction }) => {
+const NoStartedPage = ({ role, startAuction,setStarted }) => {
+  const { selectedAuction, setSelectedAuction, auctionData } = useData()
+  const [auctionList,setAuctionList]=useState([])
+  console.log('NoStartedPage')
+  const [selectOne, setselectOne] = useState('')
+  const user = getUserDetails()
+  const { socket } = useSocket()
+  const {mydetails, userRole}=useAuth()
+
+  useEffect(()=>{
+    if(userRole==="organisation"){
+
+      const auctionId = JSON.parse(mydetails).auctionId
+    
+      const filteredData= auctionData.filter((x)=>x.value===auctionId)
+      setAuctionList(filteredData)
+
+    }
+  },[mydetails, userRole])
+  const joinRoom = () => {
+    if (!selectOne) {
+      ToastAndroid.show('Please select Event!', ToastAndroid.SHORT);
+      return 0;
+    }
+    socket.emit("join:room", {
+      username: user.name,
+      auctionId: selectOne,
+      userId: user._id,
+      
+    })
+    setStarted(true)
+  }
   return (
     <View style={styles.container}>
       {/* Empty State Illustration */}
@@ -15,19 +52,29 @@ const NoStartedPage = ({ role, startAuction }) => {
 
       {/* Main Text */}
       <Text style={styles.title}>Auction Not Started Yet</Text>
-      <Paragraph style={styles.description}>
-        will Start Soon  at 3:00 pm
-      </Paragraph>
+      <Text style={[styles.title, {
+        fontSize: 16
+      }]}>Select Auction </Text>
+      <View style={{
+        width: "100%"
+      }}>
+        <Dropdown
+          label="Select Events"
+          placeholder="Select Events"
+          options={auctionList || []}
+          value={selectOne}
+          onSelect={(data) => {
+            setselectOne(data)
+          }}
+        />
+      </View>
+      <Button style={{
+        width: "90%",
+        marginTop: 20
+      }} mode="contained" onPress={() => joinRoom()}>
+        Go Live for Auction
+      </Button>
 
-      {/* Action Button */}
-      {role === 'admin' && <Button
-        mode="contained"
-        style={styles.button}
-        icon="play-circle"
-        onPress={startAuction}
-      >
-        Start Now
-      </Button>}
 
 
       {/* Optional Retry or Help Icon */}
@@ -44,10 +91,12 @@ const NoStartedPage = ({ role, startAuction }) => {
 const styles = StyleSheet.create({
   container: {
     height: heightPerHeight(95),
+    width: widthPerWidth(100),
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f7f7f7',
     padding: 20,
+
   },
   iconContainer: {
     justifyContent: 'center',

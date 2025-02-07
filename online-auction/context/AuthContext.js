@@ -7,10 +7,13 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useMMKVBoolean('isLoggedIn');
     const [userToken, setUserToken] = useMMKVString('userToken');
+    const [userRole, setUserRole] = useMMKVString('userRole');
+    const [mydetails, setMyDetails] = useMMKVString('me');
     const navigation = useNavigation()
     
-    const login = (token) => {
+    const login = (token, role) => {
         setUserToken(token);
+        setUserRole(role)
         setIsLoggedIn(true);
     }
     const logout = () => {
@@ -27,7 +30,10 @@ export const AuthProvider = ({ children }) => {
      }
     }, [isLoggedIn])
     return (
-        <AuthContext.Provider value={{ isLoggedIn, login, logout,userToken, setUserToken }}>
+        <AuthContext.Provider value={{ isLoggedIn, login, logout,userToken, setUserToken ,
+        userRole, setUserRole,
+        mydetails, setMyDetails
+         }}>
             {children}
         </AuthContext.Provider>
     );

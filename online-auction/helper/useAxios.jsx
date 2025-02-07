@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 
 
 // export const baseUrl="http://192.168.110.124:3031"
-export const baseUrl="http://192.168.91.124:3031"
+// export const baseUrl="http://192.168.91.124:3031"
+export const baseUrl="http://192.168.1.18:3031"
 
 
 

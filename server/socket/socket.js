@@ -1,9 +1,10 @@
-import { addBid, soldToFunctionalities } from "../controllers/biddingGround.controller.js"
+import { addBid, playerToBidGround, soldToFunctionalities, unSoldFunctionalities } from "../controllers/biddingGround.controller.js"
 import { saveMessages } from "../controllers/GroupMessagesControler.js"
 import { getAllMessagesPrivate, individualConversationSave } from "../controllers/IndividualConversations.js"
 import { getOnlineuser, saveuser } from "../controllers/onlineUser.controller.js"
 import { getLatestPlayerWithHighestBasePrice } from "../controllers/player.controller.js"
 import OnlineUser from "../schema/socket.schema.js"
+import AuctionDetails from "../schema/auctions.schema.js"
 
 
 function logTimeExpired() {
@@ -23,6 +24,7 @@ export default () => {
             saveuser(data)
 
         })
+
         socket.on("onlineUsers", async () => {
             const users = await getOnlineuser(socket.id)
             socket.emit("onlineUsers", users)
@@ -56,43 +58,90 @@ export default () => {
         })
 
         socket.on("start:auction", async (data) => {
-            global.io.emit("start:auction", data)
-            const currentPlayer = await getLatestPlayerWithHighestBasePrice()
-            global.io.emit("currentPlayer", currentPlayer)
+            // Join the specific room
+            socket.join(data.roomId);
+
+            // Emit "start:auction" event to all clients in the same room
+            global.io.to(data.roomId).emit("start:auction", data);
+
+            // Fetch the current player details
+        });
+        socket.on("start:auctionTable", async (data) => {
+            // Emit "stop:auction" event to all clients in the same room
+            // const currentPlayer = await getLatestPlayerWithHighestBasePrice();
+            // console.log(currentPlayer)
+            // Emit "currentPlayer" event to the same room
+            console.log(data)
+            const currentPlayer = await playerToBidGround(data.auctionId)
+            console.log(currentPlayer)
+            global.io.to(data.roomId).emit("currentPlayer", currentPlayer);
+        })
+
+        socket.on("join:room", async (data) => {
+            console.log(data)
+            const room = await AuctionDetails.findOne({ _id: data.auctionId })
+            socket.join(room.roomId)
+            const user = await OnlineUser.findOne({ userId: data.userId }).populate("userId")
+            const userDetails = {
+                userId: user.userId,
+                username: user.username,
+                avatar: user.avatar,
+                socketId: user.socketId,
+                role: user.role,
+                roomId: data.roomId
+            }
+            console.log(room.roomId)
+            socket.broadcast.to(room.roomId).emit("user:joined", userDetails);
 
         })
 
-        socket.on("currentBid", async (data) => {
+        socket.on("place:Bid", async (data) => {
             console.log(data)
             const bids = await addBid(data)
-
-            global.io.emit("currentBid", bids)
+            global.io.to(data.roomId).emit("currentBid", bids)
         })
-        socket.on("outofRace", async (data) => {
-            console.log('player out of',data)
+        socket.on("outOfRace", async (data) => {
+            console.log('player out of', data)
 
-            global.io.emit("outofRace", data)
-        }) 
+            global.io.to(data.roomId).emit("outOfRace", data)
+        })
         socket.on("soldTo", async (data) => {
-            console.log('soldTo',data)
+            console.log('soldTo', data)
 
             const result = await soldToFunctionalities(data)
-            global.io.emit("soldTo", result)
-            
-            setTimeout(async() => {
-                const currentPlayer = await getLatestPlayerWithHighestBasePrice()
-                global.io.emit("currentPlayer", currentPlayer)
-    
+            // global.io.emit("soldTo", result)
+            global.io.to(data.roomId).emit("soldTo", result)
+
+            setTimeout(async () => {
+                const currentPlayer = await playerToBidGround(data.auctionId)
+                console.log({ currentPlayer })
+                global.io.to(data.roomId).emit("currentPlayer", currentPlayer);
+
             }, 3000);
-            
+
+        })
+        socket.on("unSold", async (data) => {
+            console.log('unSold', data)
+
+            const result = await unSoldFunctionalities(data)
+            // global.io.emit("soldTo", result)
+            global.io.to(data.roomId).emit("unSold", result)
+
+            setTimeout(async () => {
+                const currentPlayer = await playerToBidGround(data.auctionId)
+                console.log({ currentPlayer })
+                global.io.to(data.roomId).emit("currentPlayer", currentPlayer);
+
+            }, 3000);
+
         })
 
-        socket.on("lastChance",()=>{
-            socket.emit("lastChance",{
-                message:"Its Your last Chance to Bid for this player"
-            })
+        socket.on("lastChance", (data) => {
+            global.io.to(data.roomId).emit("lastChance", {
+                message: "Its Your last chance to Bid for this player"
+            });
         })
-        
+
     })
     return global.io;
 }
