@@ -38,6 +38,12 @@ const biddingGroundSchema = new mongoose.Schema(
     soldTo: {
       type: mongoose.Schema.Types.ObjectId, // Reference to the User document
       ref: "user",
+    }, 
+    auctionId:{
+      type: mongoose.Schema.Types.ObjectId, // Reference to the Room document
+      ref: "auction",
+      required: true,
+
     }
 
   },

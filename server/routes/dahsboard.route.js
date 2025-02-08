@@ -3,9 +3,9 @@ import express from 'express';
 const router = express.Router();
 
 
-import {getSuymmary} from '../controllers/dashboard.controller.js';
+import {getSummary} from '../controllers/dashboard.controller.js';
 
-router.get('/', getSuymmary);
+router.get('/', getSummary);
 
 
 export default router;

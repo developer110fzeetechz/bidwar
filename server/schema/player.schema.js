@@ -60,6 +60,10 @@ const playerSchema = new mongoose.Schema({
         required: true,
         min: 1000,
     },
+    auctionId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'auction'
+    }
 }, { timestamps: true });
 
 const Player = mongoose.model('Player', playerSchema);

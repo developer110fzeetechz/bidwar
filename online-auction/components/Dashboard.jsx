@@ -5,9 +5,11 @@ import { Card, Title, Paragraph } from 'react-native-paper';
 
 
 export default function Dashboard({ dashboard }) {
+    console.log({dashboard})
     const { registeredPlayers, wicketKeepersCount, batsman, bowlers, allrounders, registeredTeams } = dashboard
+
     const data = [
-        { title: 'Registered Players', value: registeredPlayers },
+        { title: 'Registered Players', value: registeredPlayers?.length },
         { title: 'Wicketkeepers', value: wicketKeepersCount },
         { title: 'All Rounders', value: allrounders },
         { title: 'Batsman', value: batsman },

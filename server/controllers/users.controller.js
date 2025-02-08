@@ -8,9 +8,9 @@ import { sendMail } from '../helper/sendMail.js';
 // Create a new user
 const createUser = async (req, res) => {
     try {
-        const { name, phone, email, imageUrl, password, role } = req.body;
+        const { name, phone, email, imageUrl, password, role, auctionId } = req.body;
 
-        if (!name || !phone || !email || !password || !role) {
+        if (!name || !phone || !email || !password || !role || !auctionId) {
             return error.BadRequest(res, 'All fields are required.');
         }
         // Check if user with the same email already exists
@@ -26,6 +26,7 @@ const createUser = async (req, res) => {
             imageUrl,
             password, // In a real application, hash the password before saving
             role,
+            auctionId
         });
 
         await newUser.save();
@@ -40,8 +41,13 @@ const createUser = async (req, res) => {
 
 // Get all users
 const getAllUsers = async (req, res) => {
+    const { auctionId } = req.query
+    console.log({ auctionId })
     try {
-        const users = await User.find();
+        const users = await User.find({
+            auctionId: auctionId,
+            role: { $ne: 'admin' } // Exclude admin users from the result
+        });
         return success.successResponse(res, users, 'Users retrieved successfully.');
     } catch (err) {
         return error.InternalServerError(res, err.message);
@@ -95,7 +101,7 @@ const updateUserById = async (req, res) => {
                 </div>
             </div>
         `;
-        
+
         const rejectedTemplate = `
             <div style="font-family: Arial, sans-serif; color: #333;">
                 <div style="background-color: #FF5733; color: white; padding: 20px; text-align: center;">
@@ -124,7 +130,7 @@ const updateUserById = async (req, res) => {
         return error.InternalServerError(res, err.message);
     }
 };
-    
+
 
 // Delete user by ID
 const deleteUserById = async (req, res) => {
@@ -159,20 +165,20 @@ const loginUser = async (req, res) => {
         }
         // //Send token
         const token = user.getSignedJwtToken();
-        return success.successResponse(res, { token }, 'User logged in successfully.');
+        return success.successResponse(res, { token, role: user.role }, 'User logged in successfully.');
     } catch (error) {
 
     }
 }
 
-const getProfile=async(req,res)=>{
-    
-const {_id}=req.user;
-    try{
-        const users=await User.findOne({_id}).select('-password');
-        return success.successResponse(res,users,'Users retrieved successfully');
-    }catch(error){
-        return error.InternalServerError(res,error.message);
+const getProfile = async (req, res) => {
+
+    const { _id } = req.user;
+    try {
+        const users = await User.findOne({ _id }).select('-password');
+        return success.successResponse(res, users, 'Users retrieved successfully');
+    } catch (error) {
+        return error.InternalServerError(res, error.message);
     }
 }
 const pruchasedPlayer = async (req, res) => {
@@ -200,4 +206,4 @@ const pruchasedPlayer = async (req, res) => {
     }
 };
 
-export { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser,getProfile ,pruchasedPlayer};
+export { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser, getProfile, pruchasedPlayer };

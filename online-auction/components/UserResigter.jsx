@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { TextInput, Button, Snackbar, ActivityIndicator } from 'react-native-paper';
 import useAxios from '../helper/useAxios';
 import { router } from 'expo-router';
+import { Dropdown } from 'react-native-paper-dropdown';
 
 const UserForm = () => {
   const [name, setName] = useState('');
@@ -14,11 +15,29 @@ const UserForm = () => {
   const [visible, setVisible] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
-
+  const [auctionData, setAuctionData] = useState([])
+  const [RunningAuction, setRunningAuction] = useState('')
   const { fetchData, data, loading } = useAxios();
 
+  const getAuctionLists = async () => {
+    const res = await fetchData({
+      url: '/api/auction',
+      method: 'GET',
+    })
+    const resData = res.data.map((x) => {
+      return {
+        label: x.title,
+        value: x._id,
+      }
+    })
+    setAuctionData(resData)
+  }
+  useEffect(() => {
+    getAuctionLists()
+  }, [])
+
   const handleSubmit = async () => {
-    if (!name || !phone || !email || !password) {
+    if (!name || !phone || !email || !password || !RunningAuction) {
       setMessage('Please fill in all the required fields');
       setIsError(true);
       setVisible(true);
@@ -32,8 +51,10 @@ const UserForm = () => {
       imageUrl,
       password,
       role: 'organisation',
+      auctionId: RunningAuction
     };
 
+    console.log(userData)
     try {
       const res = await fetchData({
         url: '/api/users',
@@ -52,7 +73,7 @@ const UserForm = () => {
         setImageUrl('');
         setPassword('');
         setTimeout(() => {
-            router.back();
+          router.back();
         }, 1000);
       } else {
         throw new Error(res?.message || 'Failed to create user');
@@ -106,7 +127,14 @@ const UserForm = () => {
         secureTextEntry
         style={styles.input}
       />
+      <Dropdown
+        label="Auction Lists"
+        placeholder="Select Auction List"
+        options={auctionData}
+        value={RunningAuction}
+        onSelect={setRunningAuction}
 
+      />
       <Button
         mode="contained"
         onPress={handleSubmit}

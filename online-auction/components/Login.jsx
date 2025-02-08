@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import useAxios from '../helper/useAxios';
 import { showToast } from '../helper/toasts';
+import useUserDetails from '../hooks/useUserDetails';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,8 +16,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false); // For handling the loading state
   const [error, setError] = useState(''); // For displaying error message
 
+
   const { login, isLoggedIn } = useAuth();
   const { fetchData, error: apiError } = useAxios();
+  const {getMe} =useUserDetails('from loagin')
 
   const handleSubmit = async () => {
 
@@ -39,8 +42,13 @@ export default function Login() {
         data: { email, password },
 
       })
+      console.log('our res', res)
       if (res.status) {
-        login(res.data.token);
+        console.log(res.data.token)
+        login(res.data.token, res.data.role);
+        getMe(res.data.token)
+
+
       }
 
       showToast(res.message)

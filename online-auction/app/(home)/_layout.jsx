@@ -5,12 +5,10 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
 import { widthPerWidth } from '../../helper/dimensions';
-import useUserDetails from '../../hooks/useUserDetails';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useSocket } from '../../context/socketContext';
 import { getUserDetails } from '../../helper/Storage';
 export default function _layout() {
-    const { userDetails } = useUserDetails()
     const {socket} = useSocket()
 const user= getUserDetails()
 
