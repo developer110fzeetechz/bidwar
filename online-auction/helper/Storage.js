@@ -46,3 +46,8 @@ const getToken = () => {
     const storage = new MMKV()
     return storage.getString('token')
 }
+
+export const clearKey = (key) => {
+    const storage = new MMKV();
+    storage.delete(key);
+  };

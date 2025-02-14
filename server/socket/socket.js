@@ -68,10 +68,7 @@ export default () => {
             // Fetch the current player details
         });
         socket.on("start:auctionTable", async (data) => {
-            // Emit "stop:auction" event to all clients in the same room
-            // const currentPlayer = await getLatestPlayerWithHighestBasePrice();
-            // console.log(currentPlayer)
-            // Emit "currentPlayer" event to the same room
+    
             // ----------------update auction doc-------------------
             // start:auctionTable
             const started = await updateAuctionDoc(data.auctionId)

@@ -5,12 +5,14 @@ import Dashboard from '../../components/Dashboard'
 
 import { useAuth } from '../../context/AuthContext'
 import useAxios from '../../helper/useAxios'
-import { Appbar, Avatar } from 'react-native-paper'
+import { Appbar, Avatar, Button } from 'react-native-paper'
 import { getUserDetails, isAdmin } from '../../helper/Storage'
 import { useSocket } from '../../context/socketContext'
 import { Dropdown } from 'react-native-paper-dropdown'
 import { useData } from '../../context/useData'
 import { widthPerWidth } from '../../helper/dimensions'
+import Entypo from '@expo/vector-icons/Entypo';
+import { router } from 'expo-router'
 
 // import * as Device from 'expo-device';
 export default function home() {
@@ -20,7 +22,7 @@ export default function home() {
   const{selectedAuction,setSelectedAuction,auctionData,setAuctionData ,}=useData()
   const {userRole, mydetails}=useAuth()
   const[myAuctionList,setMyAuctionList]=useState([])
-
+console.log(userRole)
   const getAllData = async () => {
     const { status, data } = await fetchData({
       url: `/api/dashboard?auctionId=${selectedAuction}`,
@@ -38,8 +40,9 @@ export default function home() {
  useEffect(()=>{
 console.log(auctionData)
 if(userRole==="organisation"){
+  console.log({mydetails})
 
-  const auctionId = JSON.parse(mydetails).auctionId
+  const auctionId =mydetails && JSON.parse(mydetails).auctionId
 
   const filteredData= auctionData.filter((x)=>x.value===auctionId)
   setMyAuctionList(filteredData)
@@ -77,20 +80,26 @@ if(userRole==="admin"){
        <Dropdown
                 label="Select Events"
                 placeholder="Select Events"
-                options={myAuctionList || []}
+                options={auctionData || []}
                 value={selectedAuction}
                 onSelect={setSelectedAuction}
             /> 
        </View>
 
       
-        <Avatar.Image
-          size={45}
-          source={{ uri: user.imageUrl || "https://www.esri.com/content/dam/esrisites/en-us/user-research-testing/assets/user-research-testing-overview-banner-fg.png" }}
-          style={{ marginRight: 10, borderWidth: 3, borderColor: `${isConnected ? "green":"red"}` }}
+      {
+        userRole ?  <Avatar.Image
+        size={45}
+        source={{ uri: user.imageUrl || "https://www.esri.com/content/dam/esrisites/en-us/user-research-testing/assets/user-research-testing-overview-banner-fg.png" }}
+        style={{ marginRight: 10, borderWidth: 3, borderColor: `${isConnected ? "green":"red"}` }}
 
 
-        />
+      /> :<Button onPress={()=>{
+        router.push('auth')
+      }}>
+        <Entypo name="login" size={24} color="black" />
+      </Button>
+      }
       </Appbar.Header>
 <View>
   <Text>{userRole}</Text>

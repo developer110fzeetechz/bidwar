@@ -5,7 +5,7 @@ import { Card, Title, Paragraph } from 'react-native-paper';
 
 
 export default function Dashboard({ dashboard }) {
-    console.log({dashboard})
+
     const { registeredPlayers, wicketKeepersCount, batsman, bowlers, allrounders, registeredTeams } = dashboard
 
     const data = [

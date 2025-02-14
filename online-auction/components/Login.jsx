@@ -45,9 +45,10 @@ export default function Login() {
       console.log('our res', res)
       if (res.status) {
         console.log(res.data.token)
-        login(res.data.token, res.data.role);
+        
         getMe(res.data.token)
-
+        
+        login(res.data.token, res.data.role);
 
       }
 

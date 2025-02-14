@@ -10,14 +10,15 @@ function MainLayoutProvider() {
         <>
 
             <Stack>
+              
                 <Stack.Screen
-                    name="index"
+                    name="(home)"
                     options={{
                         headerShown: false,
                     }}
                 />
-                <Stack.Screen
-                    name="(home)"
+                  <Stack.Screen
+                    name="index"
                     options={{
                         headerShown: false,
                     }}

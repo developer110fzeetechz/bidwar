@@ -1,6 +1,7 @@
 import { router, useNavigation } from "expo-router";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useMMKVBoolean, useMMKVString } from "react-native-mmkv"
+import { clearKey } from "../helper/Storage";
 
 const AuthContext = createContext();
 
@@ -19,15 +20,16 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUserToken("")
         setIsLoggedIn(false);
+        setUserRole('')
+        clearKey('me')
+        router.replace('auth')
     }
 
     useEffect(() => {
        if(isLoggedIn){
         //    navigation.navigate('(home)')
         router.replace('(home)')
-        } else {
-           router.replace('auth')
-     }
+        } 
     }, [isLoggedIn])
     return (
         <AuthContext.Provider value={{ isLoggedIn, login, logout,userToken, setUserToken ,

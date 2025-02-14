@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext';
 
 
 // export const baseUrl="http://192.168.110.124:3031"
-// export const baseUrl="http://192.168.91.124:3031"
-export const baseUrl="http://192.168.1.18:3031"
+export const baseUrl="http://192.168.29.174:3031"
+// export const baseUrl="http://192.168.1.18:3031"
 
-
+ 
 
 const useAxios = (initialConfig = {}, options = {}) => {
     const { manual = true } = options;

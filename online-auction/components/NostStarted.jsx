@@ -30,6 +30,8 @@ const NoStartedPage = ({ role, startAuction,setStarted,selectedInternalAuction, 
       const filteredData= auctionData.filter((x)=>x.value===auctionId)
       setAuctionList(filteredData)
 
+    }else{
+      setAuctionList(auctionData)
     }
   },[mydetails, userRole])
   const joinRoom = async() => {
@@ -45,7 +47,7 @@ const NoStartedPage = ({ role, startAuction,setStarted,selectedInternalAuction, 
     if(status){
    
       socket.emit("join:room", {
-        username: user.name,
+        username: user.name ||"test",
         auctionId: selectOne,
         userId: user._id,
         
