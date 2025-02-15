@@ -25,7 +25,7 @@ export default function ListsAuctions({ animatedValue, visible, style, setStarte
     useEffect(() => {
         const getData = async () => {
             const res = await fetchData({
-                url: '/api/auction',
+                url: '/api/auction/allauction',
                 method: 'GET',
             });
             if (res.status) {

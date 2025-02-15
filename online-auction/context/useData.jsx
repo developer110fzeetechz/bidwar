@@ -23,9 +23,10 @@ export const ProjectProvider = ({ children }) => {
 
     const getData = async () => {
         const { data, status } = await fetchData({
-            url: '/api/auction',
+            url: '/api/auction/allauction',
             method: 'GET',
         })
+        console.log({data})
         if (status) {
             const _data = data.map((x) => {
                 return {

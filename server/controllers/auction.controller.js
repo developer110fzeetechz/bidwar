@@ -62,6 +62,17 @@ const getupcomingAuctions = async (req,res) => {
     }
 
 }
+const getAllAuctions = async (req,res) => {
+    
+    try {
+        const auctions = await AuctionModel.find()
+        console.log(auctions)
+        success.successResponse(res, auctions, 'All Auctions reteived successfully')
+    } catch (err) {
+        error.InternalServerError(res, err.message)
+    }
+
+}
 
 const getSingleAuction =async(req,res)=>{
     try {
@@ -87,4 +98,4 @@ const endAuction =async(auctionId)=>{
 return await AuctionModel.findOneAndUpdate({ _id:auctionId }, { status: "Completed" }, { new: true })
 }
 
-export { createAuction, getupcomingAuctions ,getSingleAuction ,updateAuctionDoc ,getStartedAuction ,endAuction}
+export { createAuction, getupcomingAuctions ,getSingleAuction ,updateAuctionDoc ,getStartedAuction ,endAuction ,getAllAuctions}

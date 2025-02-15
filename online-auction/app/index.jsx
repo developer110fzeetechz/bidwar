@@ -17,7 +17,7 @@ export default function index() {
   //     <Test isFocused={isFocused} />
   //   </View>
   // )
-  return <Redirect href={isLoggedIn ? "(home)" : "auth"} />
+  return <Redirect href={isLoggedIn ? "(home)" : "(home)"} />
 }
 
 const styles = StyleSheet.create({

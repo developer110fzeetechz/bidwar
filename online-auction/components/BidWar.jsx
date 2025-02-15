@@ -16,7 +16,15 @@ import { router, useFocusEffect } from 'expo-router'
 
 export default function BidWar({ auctionDetails }) {
   const { mydetails, userRole } = useAuth();
-  const user = JSON.parse(mydetails)
+  console.log({mydetails})
+const[user,setUser]=useState(user)
+
+useEffect(()=>{
+if(mydetails){
+  setUser(JSON.parse(mydetails))
+}
+},[mydetails])
+  // const user = user && JSON.parse(mydetails)
   const { socket } = useSocket();
   const [isStarted, setIsStarted] = useState(false);
   const [currentActivePlayer, setCurrentActivePlayer] = useState(null);
@@ -40,15 +48,15 @@ export default function BidWar({ auctionDetails }) {
 
 
   const handleCurrentPlayer = useCallback((data) => {
-    console.log('current Player',data)
-      if((!data.data) && user.role==="admin"){
-        console.log('inside null')
-        socket.emit('EndAuction',{
-          roomId: auctionDetails.roomId,
-          auctionId: auctionDetails._id,
-        })
-        return 
-      }
+    console.log('current Player', data)
+    if ((!data.data) && user?.role === "admin") {
+      console.log('inside null')
+      socket.emit('EndAuction', {
+        roomId: auctionDetails.roomId,
+        auctionId: auctionDetails._id,
+      })
+      return
+    }
     setNotifyDetails(null)
     setVisibleModal(false)
     if (!data.data) setCurrentActivePlayer(null)
@@ -93,6 +101,7 @@ export default function BidWar({ auctionDetails }) {
   };
   // ----------------emit---------------------------
   const handleBid = () => {
+  
     const payload = {
       playerId: currentActivePlayer._id,
       bidderName: user.name,
@@ -184,7 +193,7 @@ export default function BidWar({ auctionDetails }) {
 
   useFocusEffect(
     useCallback(() => {
-     
+
       if (!isStarted) {
 
         socket.emit('isAuctionStarted', {
@@ -218,11 +227,11 @@ export default function BidWar({ auctionDetails }) {
         console.log({ unSold: data })
         setVisibleModal(true)
       });
-      socket.on('auctionEnd',(data)=>{
+      socket.on('auctionEnd', (data) => {
         console.log('Auction End', data)
         setIsStarted(false)
         showToast('Auction Ended')
-       router.replace('(home)')
+        router.replace('(home)')
 
       })
       socket.on('isAuctionStarted', (data) => {
@@ -261,7 +270,7 @@ export default function BidWar({ auctionDetails }) {
       {
         isStarted ? (
           <View>
-            <Card>
+           {userRole &&  <Card>
               <Card.Title title="Team summary" />
               <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
                 Purchased
@@ -269,7 +278,7 @@ export default function BidWar({ auctionDetails }) {
               <>
 
               </>
-            </Card>
+            </Card>}
             <Text style={{ fontSize: 18 }}>Time Left: {timer}s</Text>
             <ProgressBar progress={progress} color="#6200ee" style={{ marginTop: 10 }} />
             {currentActivePlayer ? (
@@ -301,7 +310,7 @@ export default function BidWar({ auctionDetails }) {
                   <Text>{noitfyDetails}</Text>
                 </View>}
                 {
-                  user.role === "organisation" && <>
+                  userRole === "organisation" && <>
                     <Button mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
                       Make Bid
                     </Button>
@@ -311,7 +320,7 @@ export default function BidWar({ auctionDetails }) {
                   </>
                 }
                 {
-                  user.role === "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
+                  userRole === "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
 
                     <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
                       {

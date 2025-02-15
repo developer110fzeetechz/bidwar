@@ -8,9 +8,12 @@ import { widthPerWidth } from '../../helper/dimensions';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useSocket } from '../../context/socketContext';
 import { getUserDetails } from '../../helper/Storage';
+import { useAuth } from '../../context/AuthContext';
 export default function _layout() {
     const {socket} = useSocket()
 const user= getUserDetails()
+const {userRole}=useAuth()
+console.log(user)
 
     // useEffect(() => {
     //     if(socket){
@@ -30,7 +33,7 @@ const user= getUserDetails()
                     {/* <Text>Home</Text> */}
                     <FontAwesome size={30} name="home" color="black" />
                 </TabTrigger>
-                    {user.role==="admin" &&
+                    {userRole==="admin" &&
                 <TabTrigger name="registerdTeam" href="/registerdTeam" style={styles.iconStyle}>
                     {/* <Text>Home</Text> */}
                     <AntDesign name="team" size={24} color="black" />

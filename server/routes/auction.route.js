@@ -2,10 +2,11 @@
 
 import express from 'express';
 const router = express.Router();
-import {createAuction ,getSingleAuction,getupcomingAuctions} from '../controllers/auction.controller.js';
+import {createAuction ,getAllAuctions,getSingleAuction,getupcomingAuctions} from '../controllers/auction.controller.js';
 
 // Get all players
 router.get('/', getupcomingAuctions);
+router.get('/allauction', getAllAuctions);
 
 // Create a new player
 router.post('/', createAuction);

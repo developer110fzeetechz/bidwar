@@ -10,8 +10,8 @@ export default function auctionTable() {
     const [started, setStarted] = useState(false)
     const {userRole,mydetails}=useAuth()
      const [selectedInternalAuction, setselectedInternalAuction] = useState(null);
-
-
+console.log('renderd')
+console.log({userRole})
     return (
         <View>{
             started ? (
