@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { TextInput, Button, Snackbar, ActivityIndicator } from 'react-native-paper';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { TextInput, Button, Snackbar, ActivityIndicator, Avatar } from 'react-native-paper';
 import useAxios from '../helper/useAxios';
 import { router } from 'expo-router';
 import { Dropdown } from 'react-native-paper-dropdown';
+import * as ImagePicker from 'expo-image-picker';
 
 const UserForm = () => {
   const [name, setName] = useState('');
@@ -17,6 +18,7 @@ const UserForm = () => {
   const [isError, setIsError] = useState(false);
   const [auctionData, setAuctionData] = useState([])
   const [RunningAuction, setRunningAuction] = useState('')
+  const [image,setImage]=useState('')
   const { fetchData, data, loading } = useAxios();
 
   const getAuctionLists = async () => {
@@ -35,6 +37,22 @@ const UserForm = () => {
   useEffect(() => {
     getAuctionLists()
   }, [])
+
+  const pickImageAsync = async () => {
+          let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: .3,
+          });
+      
+          if (!result.canceled) {
+            console.log(result);
+            const imag = result.assets[0].uri
+            setImage(imag);
+          } else {
+            alert('You did not select any image.');
+          }
+        };
 
   const handleSubmit = async () => {
     if (!name || !phone || !email || !password || !RunningAuction) {
@@ -72,9 +90,36 @@ const UserForm = () => {
         setEmail('');
         setImageUrl('');
         setPassword('');
-        setTimeout(() => {
-          router.back();
-        }, 1000);
+        if (image) {
+          const formData = new FormData()
+          formData.append('subFolder', 'team');
+          formData.append('file', {
+              uri: image,
+              type: "image/jpg" || 'image/jpeg',
+              name: `avatar${Date.now()}.${image.split('.').pop()}`,
+              filename: `avatar ${Date.now()}.${image.split('.').pop()}`,
+          })
+          console.log('here')
+          const {data,status} = await fetchData({
+              url: `/api/users/imageupload/${res.data._id}`,
+              method: 'patch',
+              data: formData,
+              headers: {
+                  'Content-Type': 'multipart/form-data',
+                  key: '5TIvw5cpc0'
+              }
+          });
+          console.log(
+            data
+          )
+          if (status) {
+              setImage('')
+          }
+        }
+        
+        // setTimeout(() => {
+        //   router.back();
+        // }, 1000);
       } else {
         throw new Error(res?.message || 'Failed to create user');
       }
@@ -88,7 +133,20 @@ const UserForm = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>User Registration</Text>
+<TouchableOpacity style={{
+                alignSelf: "center",
+                marginBottom: 20
+            }}
+            onPress={pickImageAsync}
+            >
+                <Avatar.Image size={100} source={{
+                    uri:image||'https://images.unsplash.com/photo-1593766787879-e8c78e09cbbe?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                }} 
 
+// onPress={()=>console.log('pressed')}
+
+                />
+            </TouchableOpacity>
       <TextInput
         label="Name"
         value={name}
@@ -110,13 +168,6 @@ const UserForm = () => {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
-        style={styles.input}
-      />
-
-      <TextInput
-        label="Image URL"
-        value={imageUrl}
-        onChangeText={setImageUrl}
         style={styles.input}
       />
 
@@ -161,7 +212,8 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     flex: 1,
-    marginTop: 50,
+    // marginTop: 50,
+    justifyContent:"center",
   },
   title: {
     fontSize: 24,

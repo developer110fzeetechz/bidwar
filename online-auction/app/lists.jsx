@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import useAxios from '../helper/useAxios';
+import useAxios, { baseUrl } from '../helper/useAxios';
 import { Card, Text, Paragraph, Avatar, Chip, Appbar } from 'react-native-paper';
 import { widthPerWidth } from '../helper/dimensions';
 import { useData } from '../context/useData';
@@ -60,12 +60,12 @@ export default function Lists() {
       <Card.Title
         title={item.name}
         left={(props) => (
-          <Avatar.Image size={50} source={{ uri: item.imageUrl }} />
+          <Avatar.Image size={50} source={{ uri:`${baseUrl}${item.image}` }} />
         )}
         right={(props) => (
           <>{name !== "Teams" && <View>
             <Chip style={{ marginRight: 10 }} onPress={() => console.log('Pressed')}>
-              {item.playerType?.toUpperCase()}
+              {item.playerRole?.toUpperCase()}
             </Chip>
             <View style={{
               borderRadius: 5, marginRight: 10, marginTop: 5, paddingVertical: 5,
@@ -90,6 +90,7 @@ export default function Lists() {
           <Paragraph>
             Wicketkeeper: {item.battingDetails?.isWicketkeeper ? 'Yes' : 'No'}
           </Paragraph>
+      
         </Card.Content>}
 
     </Card>

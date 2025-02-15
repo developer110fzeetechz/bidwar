@@ -32,15 +32,15 @@ export default function PurchasedPlayer() {
   );
 
   const categorizedPlayers = {
-    batter: players.filter(player => player.playerDetails.playerType === 'batter'),
-    bowler: players.filter(player => player.playerDetails.playerType === 'bowler'),
-    allrounder: players.filter(player => player.playerDetails.playerType === 'allrounder'),
+    batter: players.filter(player => player.playerDetails.playerRole === 'Batsman'),
+    bowler: players.filter(player => player.playerDetails.playerRole === 'Bowler'),
+    allrounder: players.filter(player => player.playerDetails.playerRole === 'Allrounder'),
   };
 
   const sections = [
-    { title: '🏏 Batters', data: categorizedPlayers.batter },
-    { title: '🎯 Bowlers', data: categorizedPlayers.bowler },
-    { title: '🔄 Allrounders', data: categorizedPlayers.allrounder },
+    { title: '🏏 Batsman', data: categorizedPlayers.batter },
+    { title: '🎯 Bowler', data: categorizedPlayers.bowler },
+    { title: '🔄 Allrounder', data: categorizedPlayers.allrounder },
   ];
   const _goBack = () => {
     router.back()

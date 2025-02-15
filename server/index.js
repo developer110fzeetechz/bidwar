@@ -14,7 +14,6 @@ const server = http.createServer(app);
 dotenv.config()
 connectDb()
 
-console.log("{global:global.io}")
 
 global.io = new Server(server, {
     cors: {
@@ -30,6 +29,8 @@ testio()
 
 app.use(morgan('tiny'))
 app.use(express.json())
+
+app.use("/public", express.static("public"));
 const PORT = process.env.PORT || 3030
 
 
@@ -46,4 +47,5 @@ app.get("/", (req, res) => {
 
 server.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`)
+    // console.log(`Serving images at http://localhost:${PORT}/public/team/<filename>`);
 })

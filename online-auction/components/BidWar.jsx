@@ -12,18 +12,19 @@ import { ProgressBar } from 'react-native-paper';
 import MyDialog, { MyDialogNotify } from './Dialog'
 import CustomSnackbar from './CustomSnackbar'
 import { router, useFocusEffect } from 'expo-router'
+import CurrentActivePlayer from './CurrentActivePlayer'
 
 
 export default function BidWar({ auctionDetails }) {
   const { mydetails, userRole } = useAuth();
-  console.log({mydetails})
-const[user,setUser]=useState(user)
+  console.log({ mydetails })
+  const [user, setUser] = useState(user)
 
-useEffect(()=>{
-if(mydetails){
-  setUser(JSON.parse(mydetails))
-}
-},[mydetails])
+  useEffect(() => {
+    if (mydetails) {
+      setUser(JSON.parse(mydetails))
+    }
+  }, [mydetails])
   // const user = user && JSON.parse(mydetails)
   const { socket } = useSocket();
   const [isStarted, setIsStarted] = useState(false);
@@ -101,7 +102,7 @@ if(mydetails){
   };
   // ----------------emit---------------------------
   const handleBid = () => {
-  
+
     const payload = {
       playerId: currentActivePlayer._id,
       bidderName: user.name,
@@ -270,7 +271,7 @@ if(mydetails){
       {
         isStarted ? (
           <View>
-           {userRole &&  <Card>
+            {userRole && <Card>
               <Card.Title title="Team summary" />
               <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
                 Purchased
@@ -283,7 +284,13 @@ if(mydetails){
             <ProgressBar progress={progress} color="#6200ee" style={{ marginTop: 10 }} />
             {currentActivePlayer ? (
               <Card style={{ marginBottom: 20 }}>
-                <Card.Content >
+                <CurrentActivePlayer
+                  currentActivePlayer={currentActivePlayer}
+                  currentBid={currentBid}
+                  currentBidder={currentBidder}
+
+                />
+                {/* <Card.Content >
                   <Card.Title
                     title={currentActivePlayer.name}
                     right={() => <Chip background={'red'}  >{currentActivePlayer?.basePrice}</Chip>}
@@ -297,7 +304,7 @@ if(mydetails){
                       <Text style={{ marginTop: 5 }}>Age: {currentActivePlayer.age}</Text>
                       <Text style={{ marginTop: 5 }}>Email: {currentActivePlayer.email}</Text>
                       <Text style={{ marginTop: 5 }}>Phone: {currentActivePlayer.phone}</Text>
-                      <Text style={{ marginTop: 5 }}>Player Type: {currentActivePlayer.playerType}</Text>
+                      <Text style={{ marginTop: 5 }}>Player Type: {currentActivePlayer.playerRole}</Text>
                     </View>
                     <Avatar.Image size={100} source={{
                       uri: 'https://canto-wp-media.s3.amazonaws.com/app/uploads/2019/09/19193320/image-url-15.jpg'
@@ -305,7 +312,7 @@ if(mydetails){
                   </View>
                   {nextBid && <Text style={styles.currentBid}>Current Bid :{currentBid}</Text>}
                   {currentBidder && <Text style={styles.currentBid}>Bidder :{currentBidder}</Text>}
-                </Card.Content>
+                </Card.Content> */}
                 {noitfyDetails && <View style={styles.notify}>
                   <Text>{noitfyDetails}</Text>
                 </View>}

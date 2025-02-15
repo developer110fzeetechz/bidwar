@@ -1,14 +1,16 @@
 import User from '../schema/users.schema.js'; // Adjust the import path as needed
+import Player from '../schema/player.schema.js'; // Adjust the import path as needed
 import success from '../helper/res.success.js'; // For success responses
 import error from '../helper/res.error.js'; // For error responses
 import biddingGroundSchema from "../schema/bidding.schema.js"
 import { sendMail } from '../helper/sendMail.js';
+import mongoose from 'mongoose';
 
 
 // Create a new user
 const createUser = async (req, res) => {
     try {
-        const { name, phone, email, imageUrl, password, role, auctionId } = req.body;
+        const { name, phone, email, image, password, role, auctionId } = req.body;
 
         if (!name || !phone || !email || !password || !role || !auctionId) {
             return error.BadRequest(res, 'All fields are required.');
@@ -23,7 +25,7 @@ const createUser = async (req, res) => {
             name,
             phone,
             email,
-            imageUrl,
+            image,
             password, // In a real application, hash the password before saving
             role,
             auctionId
@@ -39,6 +41,30 @@ const createUser = async (req, res) => {
     }
 };
 
+const uploadImage = async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return error.BadRequest(res, 'Invalid ID');
+
+        }
+        const filter = {
+            _id: req.params.id
+        }
+        const update = {
+
+            image: `/${req.file.destination}/${req.file.filename}`
+
+        }
+        const uploadImage = await User.findOneAndUpdate(filter, update, {
+            new: true
+        })
+        // console.log(uploadImage)
+        success.successResponse(res, uploadImage, 'Image uploaded successfully');
+    } catch (err) {
+
+        return error.InternalServerError(res, err.message);
+    }
+}
 // Get all users
 const getAllUsers = async (req, res) => {
     const { auctionId } = req.query
@@ -173,8 +199,14 @@ const loginUser = async (req, res) => {
 
 const getProfile = async (req, res) => {
 
-    const { _id } = req.user;
+    const { _id, role } = req.user;
+    console.log(req.user)
     try {
+        if (role == 'player') {
+            const player = await Player.findOne({ _id }).select('-password')
+
+            return success.successResponse(res, player, 'Users retrieved successfully');
+        }
         const users = await User.findOne({ _id }).select('-password');
         return success.successResponse(res, users, 'Users retrieved successfully');
     } catch (error) {
@@ -206,4 +238,59 @@ const pruchasedPlayer = async (req, res) => {
     }
 };
 
-export { createUser, getAllUsers, getUserById, updateUserById, deleteUserById, loginUser, getProfile, pruchasedPlayer };
+
+
+
+const assignPurse = async (req, res) => {
+    try {
+        const { id } = req.params; // auctionId from params
+        const { purseMoney } = req.body; // Purse amount from body
+
+        // Ensure auctionId is properly formatted
+        const auctionId = mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id;
+
+        // Define filter for finding documents
+        const filter = {
+            auctionId: auctionId,
+            role: "organisation",
+            status: "accepted",
+        };
+
+        // Define update operation
+        const update = {
+            totalPurse: purseMoney,
+            remainingPurse: purseMoney
+
+        };
+
+        // Update all matching documents
+        const result = await User.updateMany(filter, update);
+
+        if (result.matchedCount === 0) {
+            return error.NOT_FOUND(res, "No matching documents found")
+        }
+
+        console.log(result);
+        success.successResponse(res, result, 'Assigned Succesfully')
+    } catch (err) {
+        console.error(err);
+        return error.InternalServerError(res, err.message)
+    }
+};
+
+
+
+
+export {
+    createUser,
+    getAllUsers,
+    getUserById,
+    updateUserById,
+    deleteUserById,
+    loginUser,
+    getProfile,
+    pruchasedPlayer,
+    uploadImage,
+    assignPurse
+
+};

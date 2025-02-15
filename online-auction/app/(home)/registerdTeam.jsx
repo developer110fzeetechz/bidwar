@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { StyleSheet, FlatList, View } from "react-native";
+import { StyleSheet, FlatList, View, TextInput } from "react-native";
 import {
   Card,
   Avatar,
@@ -9,9 +9,11 @@ import {
   Portal,
   Provider,
   IconButton,
+  Snackbar,
+  ActivityIndicator,
 } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
-import useAxios from "../../helper/useAxios";
+import useAxios, { baseUrl } from "../../helper/useAxios";
 import Header from "../../components/Header";
 import { useData } from "../../context/useData";
 
@@ -19,15 +21,23 @@ export default function TeamList() {
   const [teams, setTeams] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [visible, setVisible] = useState(false);
-  const { selectedAuction } = useData();
+  const [purse, setPurse] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarColor, setSnackbarColor] = useState("green");
 
+  const { selectedAuction } = useData();
   const { fetchData } = useAxios();
 
   const getTeam = async () => {
+    setLoading(true);
     const res = await fetchData({
       url: `/api/users?auctionId=${selectedAuction}`,
       method: "GET",
     });
+    setLoading(false);
+
     if (res.status) {
       setTeams(res.data);
     }
@@ -35,11 +45,10 @@ export default function TeamList() {
 
   useFocusEffect(
     useCallback(() => {
-      getTeam(); // Fetch data when the screen is focused
+      getTeam();
     }, [selectedAuction])
   );
 
-  // Helper function for dynamic status colors
   const getStatusColor = (status) => {
     switch (status) {
       case "accepted":
@@ -53,7 +62,6 @@ export default function TeamList() {
     }
   };
 
-  // Show modal with selected team details
   const showModal = (team) => {
     setSelectedTeam(team);
     setVisible(true);
@@ -64,23 +72,75 @@ export default function TeamList() {
     setVisible(false);
   };
 
-  const updateStatus = (id, newStatus) => {
+  const updateStatus = async (id, newStatus) => {
     const updatedTeams = teams.map((team) =>
       team._id === id ? { ...team, status: newStatus } : team
     );
     setTeams(updatedTeams);
 
-    fetchData({
+    const res = await fetchData({
       url: `/api/users/${id}`,
       method: "PATCH",
       data: { status: newStatus },
     });
+
+    if (res.status) {
+      showSnackbar("Status updated successfully", "green");
+    } else {
+      showSnackbar("Failed to update status", "red");
+    }
+  };
+
+  const handlePurseChange = useCallback((value) => {
+    if (/^\d*$/.test(value)) {
+      setPurse(value);
+    }
+  }, []);
+
+  const assignPurse = async () => {
+    if (!purse) return showSnackbar("Please enter a purse amount", "orange");
+
+    setLoading(true);
+    const { status } = await fetchData({
+      url: `/api/users/assignpurse/${selectedAuction}`,
+      method: "PATCH",
+      data: { purseMoney: purse },
+    });
+    setLoading(false);
+
+    if (status) {
+      setPurse("");
+      showSnackbar("Purse assigned successfully", "green");
+      getTeam();
+    } else {
+      showSnackbar("Failed to assign purse", "red");
+    }
+  };
+
+  const showSnackbar = (message, color) => {
+    setSnackbarMessage(message);
+    setSnackbarColor(color);
+    setSnackbarVisible(true);
   };
 
   return (
     <Provider>
       <View style={styles.container}>
         <Header title={"Registered Team"} />
+
+        {/* Purse Input and Global Button */}
+        <View style={styles.purseContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Purse Amount"
+            value={purse}
+            onChangeText={handlePurseChange}
+            keyboardType="numeric"
+          />
+          <Button mode="contained" onPress={assignPurse} disabled={loading}>
+            {loading ? <ActivityIndicator color="white" /> : "Assign Purse"}
+          </Button>
+        </View>
 
         <FlatList
           data={teams}
@@ -98,13 +158,25 @@ export default function TeamList() {
                   <Avatar.Image
                     {...props}
                     source={{
-                      uri: item.imageUrl.startsWith("http")
-                        ? item.imageUrl
-                        : "https://via.placeholder.com/100",
+                      uri:`${baseUrl}${item.image}`
                     }}
                   />
                 )}
               />
+              <Card.Content>
+                {/* Show Total Purse and Remaining Purse only if available */}
+                {item?.totalPurse && (
+                  <Text style={styles.purseText}>
+                    Total Purse: {item.totalPurse}
+                  </Text>
+                )}
+                {item?.remainingPurse && (
+                  <Text style={styles.purseText}>
+                    Remaining Purse: {item.remainingPurse}
+                  </Text>
+                )}
+              </Card.Content>
+
               <Card.Actions style={styles.actions}>
                 {item.status !== "accepted" && (
                   <IconButton
@@ -112,7 +184,6 @@ export default function TeamList() {
                     color="green"
                     size={24}
                     onPress={() => updateStatus(item._id, "accepted")}
-                    style={styles.acceptedButton}
                   />
                 )}
                 {item.status !== "rejected" && (
@@ -121,15 +192,6 @@ export default function TeamList() {
                     color="red"
                     size={24}
                     onPress={() => updateStatus(item._id, "rejected")}
-                    style={styles.rejectedButton}
-                  />
-                )}
-                {item.status === "pending" && (
-                  <IconButton
-                    icon="clock-outline"
-                    color="orange"
-                    size={24}
-                    style={styles.pendingButton}
                   />
                 )}
                 <Button onPress={() => showModal(item)}>Details</Button>
@@ -149,9 +211,7 @@ export default function TeamList() {
                 <Avatar.Image
                   size={100}
                   source={{
-                    uri: selectedTeam.imageUrl.startsWith("http")
-                      ? selectedTeam.imageUrl
-                      : "https://via.placeholder.com/100",
+                    uri: `${baseUrl}${selectedTeam.image}`|| "https://via.placeholder.com/100",
                   }}
                   style={styles.avatar}
                 />
@@ -179,58 +239,45 @@ export default function TeamList() {
             )}
           </Modal>
         </Portal>
+
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={() => setSnackbarVisible(false)}
+          duration={3000}
+          style={{ backgroundColor: snackbarColor }}
+        >
+          {snackbarMessage}
+        </Snackbar>
       </View>
     </Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-  },
-  card: {
-    marginBottom: 12,
-    backgroundColor: "#ffffff",
-    elevation: 3,
-  },
-  actions: {
-    justifyContent: "space-between",
-  },
-  modalContainer: {
-    backgroundColor: "white",
-    padding: 20,
-    margin: 20,
-    borderRadius: 10,
-  },
-  avatar: {
-    alignSelf: "center",
-    marginBottom: 16,
-  },
-  modalName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  modalDetail: {
+  container: { flex: 1, padding: 16, backgroundColor: "#f5f5f5" },
+  purseText: { fontSize: 16, fontWeight: "bold", marginTop: 5 },
+  actions: { justifyContent: "space-between" },
+  modalContainer: { backgroundColor: "white", padding: 20, borderRadius: 10 },
+  input:{
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
     fontSize: 16,
-    marginBottom: 8,
+    height:50
   },
-  label: {
-    fontWeight: "600",
-  },
-  acceptedButton: {
-    backgroundColor: "#e6f7e6",
-    borderRadius: 20,
-  },
-  rejectedButton: {
-    backgroundColor: "#fbeaea",
-    borderRadius: 20,
-  },
-  pendingButton: {
-    backgroundColor: "#fff4e6",
-    borderRadius: 20,
-  },
+  card:{
+    marginBottom: 10,
+    backgroundColor: "white",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 1,
+    marginTop:10
+  }
 });
+
+

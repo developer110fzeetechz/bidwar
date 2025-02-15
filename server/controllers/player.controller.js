@@ -4,6 +4,7 @@ import Player from '../schema/player.schema.js';
 import ErrorResponse from '../helper/res.error.js';
 import success from '../helper/res.success.js';
 import BiddingGround from "../schema/bidding.schema.js"
+import mongoose from 'mongoose';
 
 
 
@@ -28,6 +29,28 @@ const createPlayer = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 
+}
+
+const playerLogin = async(req,res)=>{
+  console.log(req.body)
+try {
+  
+  const player = await Player.findOne({ email: req.body.email});
+  console.log(player)
+  if (!player) {
+    return ErrorResponse.Unauthorized(res, 'Invalid Credentials');
+  }
+
+  const isValidPass= await player.matchPassword(req.body.password)
+  console.log(isValidPass)
+  if (!isValidPass) {
+    return ErrorResponse.Unauthorized(res, 'Invalid Credentials');
+  }
+  const token = await player.getSignedJwtToken();
+  success.successResponse(res, { token, role:'player'}, 'Logged in successfully');
+} catch (error) {
+  
+}
 }
 
 
@@ -104,6 +127,31 @@ const resData = {
 }
 }
 
+const uploadImage =async(req,res) =>{
+try {
+  if(!mongoose.Types.ObjectId.isValid(req.params.id)){
+    return ErrorResponse.BadRequest(res, 'Invalid ID');
 
+  }
+  const filter ={
+    _id:req.params.id
+  }
+  const update = {
+   
+      image:`/${req.file.destination}/${req.file.filename}`
+    
+  }
+  const uploadImage =await Player.findOneAndUpdate(filter, update,{
+    new: true
+  })
+  // console.log(uploadImage)
+  success.successResponse(res, uploadImage, 'Image uploaded successfully');
+} catch (error) {
+  
+  return ErrorResponse.InternalServerError(res, error.message);
+}
 
-export { createPlayer, getAllPlayer, getLatestPlayerWithHighestBasePrice ,getsinglePlayer }
+  
+}
+
+export { createPlayer, getAllPlayer, getLatestPlayerWithHighestBasePrice ,getsinglePlayer ,uploadImage  ,playerLogin}

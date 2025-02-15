@@ -22,7 +22,7 @@ const UserSchema = new mongoose.Schema({
         lowercase: true,
         match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, // Valid email format
     },
-    imageUrl: {
+    image: {
         type: String,
         trim: true,
         default: '', // Optional field
@@ -42,11 +42,16 @@ const UserSchema = new mongoose.Schema({
         default: 'pending',
         enum: ['pending', 'accepted', 'rejected'] // Restricts values
     },
+    totalPurse:{
+        type:Number
+    },
+    remainingPurse :{
+        type:Number
+    },
     auctionId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'auction'
     }
-
 
 }, { timestamps: true });
 

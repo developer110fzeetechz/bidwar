@@ -22,16 +22,16 @@ const getSummary = async (req, res) => {
                     players = await Player.find(auctionFilter);
                     break;
                 case "Wicketkeepers":
-                    players = await Player.find({ "battingDetails.isWicketkeeper": true, ...auctionFilter });
+                    players = await Player.find({ isWicketkeeper:"yes", ...auctionFilter });
                     break;
                 case "Batsman":
-                    players = await Player.find({ playerType: "batter", ...auctionFilter });
+                    players = await Player.find({ playerRole: "Batsman", ...auctionFilter });
                     break;
                 case "Bowlers":
-                    players = await Player.find({ playerType: "bowler", ...auctionFilter });
+                    players = await Player.find({ playerRole: "Bowler", ...auctionFilter });
                     break;
                 case "All Rounders":
-                    players = await Player.find({ playerType: "allrounder", ...auctionFilter });
+                    players = await Player.find({ playerRole: "Allrounder", ...auctionFilter });
                     break;
                 case "Teams":
                     data = await Users.find({ role: "organisation", status: "accepted", ...auctionFilter });
@@ -58,10 +58,10 @@ const getSummary = async (req, res) => {
                 registeredTeams
             ] = await Promise.all([
                 Player.find(auctionFilter),
-                Player.find({ "battingDetails.isWicketkeeper": true, ...auctionFilter }),
-                Player.find({ playerType: "batter", ...auctionFilter }),
-                Player.find({ playerType: "bowler", ...auctionFilter }),
-                Player.find({ playerType: "allrounder", ...auctionFilter }),
+                Player.find({ isWicketkeeper:"yes", ...auctionFilter }),
+                Player.find({ playerRole: "Batsman", ...auctionFilter }),
+                Player.find({ playerRole: "Bowler", ...auctionFilter }),
+                Player.find({ playerRole: "Allrounder", ...auctionFilter }),
                 Users.find({ role: "organisation", ...auctionFilter })
             ]);
 

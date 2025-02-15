@@ -18,17 +18,19 @@ import { router } from 'expo-router'
 export default function home() {
   const [dashboard, setDashboard] = useState({})
   const { fetchData } = useAxios()
+  const { logout } = useAuth()
   const { socket, isConnected } = useSocket();
-  const{selectedAuction,setSelectedAuction,auctionData,setAuctionData ,}=useData()
-  const {userRole, mydetails}=useAuth()
-  const[myAuctionList,setMyAuctionList]=useState([])
-console.log(userRole)
+  const { selectedAuction, setSelectedAuction, auctionData, setAuctionData, } = useData()
+  const { userRole, mydetails } = useAuth()
+  const [myAuctionList, setMyAuctionList] = useState([])
+  console.log(userRole)
   const getAllData = async () => {
     const { status, data } = await fetchData({
       url: `/api/dashboard?auctionId=${selectedAuction}`,
       method: "GET"
     })
     if (status) {
+      console.log(data)
       setDashboard(data)
     }
   }
@@ -37,25 +39,25 @@ console.log(userRole)
     getAllData()
   }, [selectedAuction])
 
- useEffect(()=>{
-console.log(auctionData)
-if(userRole==="organisation"){
-  console.log({mydetails})
+  useEffect(() => {
+    console.log(auctionData)
+    if (userRole === "organisation") {
+      console.log({ mydetails })
 
-  const auctionId =mydetails && JSON.parse(mydetails).auctionId
+      const auctionId = mydetails && JSON.parse(mydetails).auctionId
 
-  const filteredData= auctionData.filter((x)=>x.value===auctionId)
-  setMyAuctionList(filteredData)
-  console.log({filteredData})
-}
-if(userRole==="admin"){
-  setMyAuctionList(auctionData)
+      const filteredData = auctionData.filter((x) => x.value === auctionId)
+      setMyAuctionList(filteredData)
+      console.log({ filteredData })
+    }
+    if (userRole === "admin") {
+      setMyAuctionList(auctionData)
 
-}
- },[userRole, mydetails ,auctionData])
-  
+    }
+  }, [userRole, mydetails, auctionData])
+
   const user = getUserDetails()
- 
+  console.log({ user })
   useEffect(() => {
     if (socket && isConnected) {
 
@@ -69,48 +71,56 @@ if(userRole==="admin"){
 
   return (
     <View style={styles.container}>
-  
+
       <Appbar.Header style={{
-        justifyContent:"space-between", paddingLeft:20
+        justifyContent: "space-between", paddingLeft: 20
       }}>
         {/* <Appbar.BackAction onPress={_goBack} /> */}
-       <View style={{
-        width:widthPerWidth(70)
-       }}>
-       <Dropdown
-                label="Select Events"
-                placeholder="Select Events"
-                options={auctionData || []}
-                value={selectedAuction}
-                onSelect={setSelectedAuction}
-            /> 
-       </View>
-
-      
-      {
-        userRole ?  <Avatar.Image
-        size={45}
-        source={{ uri: user.imageUrl || "https://www.esri.com/content/dam/esrisites/en-us/user-research-testing/assets/user-research-testing-overview-banner-fg.png" }}
-        style={{ marginRight: 10, borderWidth: 3, borderColor: `${isConnected ? "green":"red"}` }}
+        <View style={{
+          width: widthPerWidth(70)
+        }}>
+          <Dropdown
+            label="Select Events"
+            placeholder="Select Events"
+            options={auctionData || []}
+            value={selectedAuction}
+            onSelect={setSelectedAuction}
+          />
+        </View>
 
 
-      /> :<Button onPress={()=>{
-        router.push('auth')
-      }}>
-        <Entypo name="login" size={24} color="black" />
-      </Button>
-      }
+        {
+          userRole ? <Avatar.Image
+            size={45}
+            source={{ uri: user?.image || "https://www.esri.com/content/dam/esrisites/en-us/user-research-testing/assets/user-research-testing-overview-banner-fg.png" }}
+            style={{ marginRight: 10, borderWidth: 3, borderColor: `${isConnected ? "green" : "red"}` }}
+
+
+          /> : <Button onPress={() => {
+            router.push('auth')
+          }}>
+            <Entypo name="login" size={24} color="black" />
+          </Button>
+        }
       </Appbar.Header>
-<View>
-  <Text>{userRole}</Text>
-</View>
+      <View>
+        <Text>{userRole}</Text>
+      </View>
       <Dashboard dashboard={dashboard} />
+      <Button onPress={() => {
+        logout()
+        // router.push('auth')
+      }}
+        mode="contained"
+      >
+        <Text>Logout</Text>
+      </Button>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-paddingTop:10
+    paddingTop: 10
   }
 })

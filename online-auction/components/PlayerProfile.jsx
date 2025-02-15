@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Avatar, Card, List, Text, Divider, IconButton } from 'react-native-paper';
+import { Avatar, Card, List, Text, Divider } from 'react-native-paper';
 import { getUserDetails } from '../helper/Storage';
 import useAxios, { baseUrl } from '../helper/useAxios';
-import { router, useLocalSearchParams } from 'expo-router';
-import { heightPerHeight } from '../helper/dimensions';
 
-
-export default function PlayerDetails({ route, navigation }) {
+export default function PlayerProfile() {
   const [playerDetails, setPlayerDetails] = useState(null);
   const [bidDetails, setBidDetails] = useState(null);
-  const { playerId } = useLocalSearchParams();
-  const { fetchData } = useAxios();
+  const user = getUserDetails();
+  const {fetchData} = useAxios();
 
   useEffect(() => {
     const getPlayer = async () => {
       const res = await fetchData({
-        url: `/api/players/player/${playerId}`,
+        url: `/api/players/player/${user._id}`,
         method: 'GET',
       });
       if (res.status) {
@@ -25,18 +22,10 @@ export default function PlayerDetails({ route, navigation }) {
       }
     };
     getPlayer();
-  }, [playerId]);
+  }, []);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Close Button */}
-      <IconButton
-        icon="close"
-        size={24}
-        style={styles.closeButton}
-        onPress={() => router.back()}
-      />
-
       {/* Profile Card */}
       <Card style={[styles.card, styles.primaryCard]}>
         <Card.Content>
@@ -99,15 +88,18 @@ export default function PlayerDetails({ route, navigation }) {
             <Text style={styles.sectionTitle}>Bid History</Text>
             <Divider style={styles.divider} />
             {bidDetails.status === "sold" ? (
-              bidDetails.bids?.map((bid, index) => (
-                <List.Item
-                  key={bid._id}
-                  title={`Bid ${index + 1}: ₹${bid.bidAmount}`}
-                  description={`Bidder: ${bid.bidderName} ${index === bidDetails.bids.length - 1 ? '(Sold)' : ''}`}
-                  left={() => <List.Icon icon="cash" />}
-                  style={{ backgroundColor: `rgba(76, 175, 80, ${0.1 + index * 0.1})`, padding: 10, borderRadius: 5, marginBottom: 5 }}
-                />
-              ))
+              bidDetails.bids?.map((bid, index) => {
+                const colorIntensity = 50 + index * 20;
+                return (
+                  <List.Item
+                    key={bid._id}
+                    title={`Bid ${index + 1}: ₹${bid.bidAmount}`}
+                    description={`Bidder: ${bid.bidderName} ${index === bidDetails.bids.length - 1 ? '(Sold)' : ''}`}
+                    left={() => <List.Icon icon="cash" />}
+                    style={{ backgroundColor: `rgba(76, 175, 80, ${0.1 + index * 0.1})`, padding: 10, borderRadius: 5, marginBottom: 5 }}
+                  />
+                );
+              })
             ) : (
               <Text style={styles.errorText}>No bids available.</Text>
             )}
@@ -120,23 +112,10 @@ export default function PlayerDetails({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    paddingVertical:10,
-    backgroundColor: '#e6e6e6',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
     flexGrow: 1,
-    marginTop:heightPerHeight(20),
-    borderTopEndRadius:30,
-    borderTopStartRadius:30,
-    paddingBottom:heightPerHeight(20)
-  },
-  closeButton: {
-    // position: 'absolute',
-    // top: 10,
-    // right: 5,
-    zIndex: 10,
-    backgroundColor:'rgba(0, 0, 0, 0.2)"',
-    alignSelf:"flex-end",
-    marginBottom:10
+    paddingTop: 50,
   },
   card: {
     borderRadius: 10,

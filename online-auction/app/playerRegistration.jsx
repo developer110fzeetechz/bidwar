@@ -15,32 +15,34 @@ export default function PlayerRegistration() {
         { label: '1500', value: 1500 },
         { label: '2000', value: 2000 },
     ];
-    const initalFormData = {
+    const initialFormData = {
         name: '',
         age: '',
         phone: '',
         email: '',
-        playerType: '', // Batter, Bowler, Allrounder
-        password: "",
-        batterDetails: {
-            type: '', // Wicketkeeper or not
-            hand: '', // Right-hand or Left-hand
+        password: '',
+        image: '', // Will hold the image URL
+        playerRole: '', // 'Batsman', 'Bowler', 'Allrounder'
+        battingDetails: {
+            handedness: '', // 'Right-hand' or 'Left-hand'
+            battingOrder: '', // 'Top Order', 'Middle Order', etc.
         },
-        bowlerDetails: {
-            type: '', // Spin or Fast
-            hand: '', // Right-arm or Left-arm
+        isWicketkeeper: '', // Boolean value
+        bowlingDetails: {
+            bowlingStyle: '', // 'Right Arm Fast', 'Left Arm Spinner', etc.
         },
-        imageUrl: '',
-        basePrice: 1000
-    }
-    const [formData, setFormData] = useState(initalFormData);
+        basePrice: 1000, // Default base price
+        auctionId: '', // Selected auction ID
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
     const [auctionData, setAuctionData] = useState([])
     const [showpassword, setShowPassword] = useState(false)
 
     const [basePrice, setBasePrice] = useState(1000)
     const [RunningAuction, setRunningAuction] = useState('')
     const { fetchData, error, loading } = useAxios();
-    const [image,setImage]=useState('')
+    const [image, setImage] = useState('')
     const getAuctionLists = async () => {
         const res = await fetchData({
             url: '/api/auction',
@@ -61,6 +63,7 @@ export default function PlayerRegistration() {
 
     useEffect(() => {
         if (error) {
+            console.log(error)
             showToast(error);
         }
     }, [error]);
@@ -84,58 +87,60 @@ export default function PlayerRegistration() {
 
     const pickImageAsync = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: true,
-          quality: 1,
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: .3,
         });
-    
+
         if (!result.canceled) {
-          console.log(result);
-          const imag = result.assets[0].uri
-          setImage(imag);
+            console.log(result);
+            const imag = result.assets[0].uri
+            setImage(imag);
         } else {
-          alert('You did not select any image.');
+            alert('You did not select any image.');
         }
-      };
+    };
 
     const handleSubmit = async () => {
-        const { name, age, phone, email, playerType, batterDetails, bowlerDetails, imageUrl } = formData;
-        console.log(formData)
-        const dataToSubmit = {
-            name,
-            age,
-            phone: Number(phone),
-            email,
-            playerType: playerType.toLowerCase(),
-            imageUrl,
-            basePrice: basePrice,
-            auctionId: RunningAuction
-        };
+        const { name, age, phone, email, playerRole, battingDetails, bowlingDetails, imageUrl } = formData;
 
-        if (playerType === 'Batter') {
-            dataToSubmit.battingDetails = {
-                handedness: batterDetails.hand.toLowerCase(),
-                isWicketkeeper: batterDetails.type === 'Wicketkeeper',
-            };
-        }
-
-        if (playerType === 'Bowler') {
-            dataToSubmit.bowlingDetails = {
-                arm: bowlerDetails.hand.toLowerCase(),
-                type: bowlerDetails.type.toLowerCase(),
-            };
-        }
-
+        const payload = { ...formData, auctionId: RunningAuction }
         const { data, message, status } = await fetchData({
             url: '/api/players',
             method: 'post',
-            data: dataToSubmit,
+            data: payload,
         });
+        // console.log(data)
 
         if (status) {
-            setFormData(initalFormData)
-            setBasePrice(1000)
             showToast(message);
+            setFormData(initialFormData)
+            setBasePrice(1000)
+            if (image) {
+                const formData = new FormData()
+                formData.append('subFolder', 'player');
+                formData.append('file', {
+                    uri: image,
+                    type: "image/jpg" || 'image/jpeg',
+                    name: `avatar${Date.now()}.${image.split('.').pop()}`,
+                    filename: `avatar ${Date.now()}.${image.split('.').pop()}`,
+                })
+                console.log('here')
+                const res = await fetchData({
+                    url: `/api/players/player/${data._id}`,
+                    method: 'patch',
+                    data: formData,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        key: '5TIvw5cpc0'
+                    }
+                });
+                if (res.status) {
+                    setImage('')
+                }
+
+            }
+
         }
     };
 
@@ -146,13 +151,13 @@ export default function PlayerRegistration() {
                 alignSelf: "center",
                 marginBottom: 20
             }}
-            onPress={pickImageAsync}
+                onPress={pickImageAsync}
             >
                 <Avatar.Image size={100} source={{
-                    uri:image||'https://images.unsplash.com/photo-1593766787879-e8c78e09cbbe?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-                }} 
+                    uri: image || 'https://images.unsplash.com/photo-1593766787879-e8c78e09cbbe?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                }}
 
-// onPress={()=>console.log('pressed')}
+                // onPress={()=>console.log('pressed')}
 
                 />
             </TouchableOpacity>
@@ -213,8 +218,8 @@ export default function PlayerRegistration() {
                     { label: "Bowler", value: 'Bowler' },
                     { label: "Allrounder", value: 'Allrounder' }
                 ]}
-                value={formData.playerType}
-                onSelect={(value) => handleChange('playerType', value)}
+                value={formData.playerRole}
+                onSelect={(value) => handleChange('playerRole', value)}
             />
 
 
@@ -227,18 +232,18 @@ export default function PlayerRegistration() {
                         { label: "Right Hand", value: 'Right-hand' },
                         { label: "Left Hand", value: 'Left-hand' }
                     ]}
-                    value={formData.batterDetails.hand}
-                    onSelect={(value) => handleNestedChange('batterDetails', 'hand', value)}
+                    value={formData.battingDetails.handedness}
+                    onSelect={(value) => handleNestedChange('battingDetails', 'handedness', value)}
                 />
                 <Text style={styles.sectionHeader}>Is Wicketkeeper ?</Text>
                 <Dropdown
                     label="IsWicketkeeper"
                     options={[
-                        { label: "Yes", value: true },
-                        { label: "No", value: false }
+                        { label: "Yes", value: 'yes' },
+                        { label: "No", value: 'no' }
                     ]}
-                    value={formData.batterDetails.isWicketKeeper}
-                    onSelect={(value) => handleNestedChange('batterDetails', 'isWicketKeeper', value)}
+                    value={formData.isWicketkeeper}
+                    onSelect={(value) => setFormData((pre) => ({ ...pre, isWicketkeeper: value }))}
                 />
                 <Text style={styles.sectionHeader}>Preferred Batting Order ?</Text>
                 <Dropdown
@@ -247,8 +252,8 @@ export default function PlayerRegistration() {
                         { label: "Middle Order", value: 'Middle Order' },
                         { label: "Top Order", value: 'Top Order' }
                     ]}
-                    value={formData.batterDetails.battingOrder}
-                    onSelect={(value) => handleNestedChange('batterDetails', 'battingOrder', value)}
+                    value={formData.battingDetails.battingOrder}
+                    onSelect={(value) => handleNestedChange('battingDetails', 'battingOrder', value)}
                 />
 
                 <Text style={styles.sectionHeader}>Preferred Bowling Style ?</Text>
@@ -262,8 +267,8 @@ export default function PlayerRegistration() {
                         { label: "Left Arm Spinner", value: 'Left Arm Spinner' },
                         { label: "Right Arm Spinner", value: 'Right Arm Spinner' },
                     ]}
-                    value={formData.bowlerDetails.bowlingStyle}
-                    onSelect={(value) => handleNestedChange('bowlerDetails', 'bowlingStyle', value)}
+                    value={formData.bowlingDetails.bowlingStyle}
+                    onSelect={(value) => handleNestedChange('bowlingDetails', 'bowlingStyle', value)}
                 />
             </>
 
@@ -277,17 +282,17 @@ export default function PlayerRegistration() {
                 value={basePrice}
                 onSelect={setBasePrice}
             />
-            
-            <Divider style={styles.divider} />
-                <Dropdown
-                    label="Auction Lists"
-                    placeholder="Select Auction List"
-                    options={auctionData}
-                    value={RunningAuction}
-                    onSelect={setRunningAuction}
 
-                />
-   
+            <Divider style={styles.divider} />
+            <Dropdown
+                label="Auction Lists"
+                placeholder="Select Auction List"
+                options={auctionData}
+                value={RunningAuction}
+                onSelect={setRunningAuction}
+
+            />
+
             {/* Submit Button */}
             <Button
                 mode="contained"
