@@ -16,11 +16,11 @@ const messageSchema = new mongoose.Schema({
     },
     avatar: {
         type: String,
-        required: true,
+        // required: true,
     },
     socketId: {
         type: String,
-        required: true,
+        // required: true,
     },
 }, {
     timestamps: true, // to track the message creation time (createdAt, updatedAt)

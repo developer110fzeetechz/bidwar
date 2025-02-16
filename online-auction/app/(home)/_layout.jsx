@@ -45,10 +45,13 @@ console.log(user)
                         style={{ width: 30, height: 30 }}
                     />
                 </TabTrigger>
-                <TabTrigger name="onlineUsers" href="/onlineUsers" style={styles.iconStyle}>
-                    {/* <Text>Home</Text> */}
+                {
+                    userRole &&  <TabTrigger name="onlineUsers" href="/onlineUsers" style={styles.iconStyle}>
+                 
                     <FontAwesome6 name="users-line" size={24} color="black" />
                 </TabTrigger>  
+                }
+               
                  <TabTrigger name="profile" href="/profile" style={styles.iconStyle}>
                     {/* <Text>Home</Text> */}
                     <AntDesign name="user" size={24} color="black" />

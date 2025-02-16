@@ -17,8 +17,8 @@ import CurrentActivePlayer from './CurrentActivePlayer'
 
 export default function BidWar({ auctionDetails }) {
   const { mydetails, userRole } = useAuth();
-  console.log({ mydetails })
-  const [user, setUser] = useState(user)
+  // console.log({ mydetails })
+  const [user, setUser] = useState({})
 
   useEffect(() => {
     if (mydetails) {
@@ -35,6 +35,8 @@ export default function BidWar({ auctionDetails }) {
   const [nextBid, setNextBid] = useState(null);
   const [currentBidder, setCurentBidder] = useState('')
   const [bidsHistory, setBidHistory] = useState([])
+  const [totalPurse,setTotalPurse] = useState(0)
+  const [disableBid,setDisableBid] = useState(false)
 
   // -----------------------dialog--------------------------
   const [visible, setVisible] = React.useState(false);
@@ -49,9 +51,9 @@ export default function BidWar({ auctionDetails }) {
 
 
   const handleCurrentPlayer = useCallback((data) => {
-    console.log('current Player', data)
+    // console.log('current Player', data)
     if ((!data.data) && user?.role === "admin") {
-      console.log('inside null')
+      // console.log('inside null')
       socket.emit('EndAuction', {
         roomId: auctionDetails.roomId,
         auctionId: auctionDetails._id,
@@ -60,12 +62,13 @@ export default function BidWar({ auctionDetails }) {
     }
     setNotifyDetails(null)
     setVisibleModal(false)
+    setDisableBid(false)
     if (!data.data) setCurrentActivePlayer(null)
     // console.log('Current Player:', data);
     const bids = data.data.battleground.bids
     if (bids.length) {
       const lastObj = bids[bids.length - 1]
-      console.log({ lastObj })
+      // console.log({ lastObj })
       setNextBid(lastObj.nextBidAmount)
       setCurrentBid(lastObj.bidAmount)
       setCurentBidder(lastObj.bidderName)
@@ -102,7 +105,10 @@ export default function BidWar({ auctionDetails }) {
   };
   // ----------------emit---------------------------
   const handleBid = () => {
-
+if(totalPurse <= nextBid){
+  showToast('Not enough purse')
+  return  // If user does not have enough purse, do nothing and return
+}
     const payload = {
       playerId: currentActivePlayer._id,
       bidderName: user.name,
@@ -114,7 +120,7 @@ export default function BidWar({ auctionDetails }) {
   }
 
   const soldTo = () => {
-    console.log({ currentBidder })
+    // console.log({ currentBidder })
     if (!currentBidder) {
       showToast('No current player to sell to')
       socket.emit('unSold', {
@@ -153,16 +159,35 @@ export default function BidWar({ auctionDetails }) {
   }
   // ---------------------listen----------------------------------
   const getCurrentBid = useCallback((data) => {
-    console.log('current Bid', data)
+    // console.log('current Bid', data)
     const bids = data.bids
+console.log(bids[bids.length -1])
+const userId = JSON.parse(mydetails)
+console.log(`user`,userId._id)
     setNextBid(bids[bids.length - 1].nextBidAmount)
     setCurrentBid(bids[bids.length - 1].bidAmount)
     setCurentBidder(bids[bids.length - 1].bidderName)
+    if(bids[bids.length - 1].bidderId===userId._id){
+      setDisableBid(true)
+    }
+
     setBidHistory(bids.reverse())
   }, [])
 
   const soldTofn = useCallback((data) => {
     console.log('Sold to', data)
+    console.log(user)
+    if(data.bidderId._Id==user.id){
+      showToast('You sold to this player')
+      // console.log('dsfd')
+      const userId= JSON.parse(mydetails)
+      socket.emit('getPurse', {
+        userId: userId._id,
+        roomId: auctionDetails.roomId,
+        auctionId: auctionDetails._id,
+        socketId: socket.id
+      });
+    }
 
     setVisibleModal(true)
 
@@ -174,7 +199,7 @@ export default function BidWar({ auctionDetails }) {
   }, [outOfRaceHandler])
 
   const outOfRaceHandler = useCallback((data) => {
-    console.log(data)
+    // console.log(data)
     setNotifyDetails(`${data.userName} is out of race for this bid`)
   }, [])
 
@@ -187,7 +212,6 @@ export default function BidWar({ auctionDetails }) {
       }, 4000)
       return () => {
         clearTimeout(timer)
-
       }
     }
   }, [noitfyDetails]);
@@ -203,11 +227,17 @@ export default function BidWar({ auctionDetails }) {
           socketId: socket.id
         })
       }
-
+      socket.emit('getPurse', {
+        userId: user?._id,
+        roomId: auctionDetails.roomId,
+        auctionId: auctionDetails._id,
+        socketId: socket.id
+      });
+// console.log({user:user._id})
       return () => {
         console.log('Tab is unfocused');
       };
-    }, [])
+    }, [user])
   );
 
   useEffect(() => {
@@ -215,21 +245,26 @@ export default function BidWar({ auctionDetails }) {
       socket.on('user:joined', (data) => {
         showToast(`${data.userId.name} Joined In Auction`);
       });
+      socket.on('getPurse', (data) => {
+        // console.log('Purse', data)
+        setTotalPurse(data)
+      });
 
 
       socket.on('start:auctionTable', (data) => {
         showToast('auction started')
         setIsStarted(true)
+
       });
       socket.on('currentPlayer', handleCurrentPlayer);
       socket.on('currentBid', getCurrentBid);
       socket.on('soldTo', soldTofn);
       socket.on('unSold', (data) => {
-        console.log({ unSold: data })
+        // console.log({ unSold: data })
         setVisibleModal(true)
       });
       socket.on('auctionEnd', (data) => {
-        console.log('Auction End', data)
+        // console.log('Auction End', data)
         setIsStarted(false)
         showToast('Auction Ended')
         router.replace('(home)')
@@ -259,7 +294,7 @@ export default function BidWar({ auctionDetails }) {
 
       };
     }
-  }, [socket, auctionDetails]);
+  }, [socket, auctionDetails,user]);
 
 
 
@@ -270,18 +305,28 @@ export default function BidWar({ auctionDetails }) {
 
       {
         isStarted ? (
-          <View>
-            {userRole && <Card>
+          <View style={{
+            marginTop:heightPerHeight(30),
+            
+          }}>
+            {userRole && <Card style={{
+              padding:30
+            }}>
               <Card.Title title="Team summary" />
               <Button style={{ width: 150 }} icon="baseball-bat" mode="contained" onPress={() => router.push('puchasedPlayer')}>
                 Purchased
               </Button>
+              <Text style={{
+                marginTop: 10,
+                marginBottom: 10,
+                marginLeft: 10,
+                color: 'green' ,
+                textAlign: 'right'
+              }}>Purse :: {totalPurse}</Text>
               <>
-
               </>
             </Card>}
-            <Text style={{ fontSize: 18 }}>Time Left: {timer}s</Text>
-            <ProgressBar progress={progress} color="#6200ee" style={{ marginTop: 10 }} />
+         
             {currentActivePlayer ? (
               <Card style={{ marginBottom: 20 }}>
                 <CurrentActivePlayer
@@ -318,7 +363,7 @@ export default function BidWar({ auctionDetails }) {
                 </View>}
                 {
                   userRole === "organisation" && <>
-                    <Button mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
+                    <Button disabled={disableBid} mode="contained" onPress={() => handleBid()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
                       Make Bid
                     </Button>
                     <Button mode="contained" onPress={() => outOfRace()} style={{ marginTop: 20, marginVertical: 10, marginHorizontal: 20 }}>
@@ -327,7 +372,7 @@ export default function BidWar({ auctionDetails }) {
                   </>
                 }
                 {
-                  userRole === "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
+                  userRole == "admin" && <View style={{ gap: "5%", marginTop: 20, marginVertical: 10, marginHorizontal: 20, flexDirection: "row", width: "100%" }}>
 
                     <Button style={{ width: '42%' }} mode="contained" onPress={() => soldTo()} >
                       {
@@ -400,6 +445,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: 'center',
+    alignItems: 'center',
 
     height: heightPerHeight(100)
   },
@@ -454,6 +500,9 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 10,
+    justifyContent:'center',
+    // alignItems: 'center',
+    // backgroundColor: '#f7f7f7'
   },
   historyTitle: {
     fontSize: 18,

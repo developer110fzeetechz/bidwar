@@ -6,6 +6,7 @@ import { getLatestPlayerWithHighestBasePrice } from "../controllers/player.contr
 import OnlineUser from "../schema/socket.schema.js"
 import AuctionDetails from "../schema/auctions.schema.js"
 import { endAuction, getStartedAuction, updateAuctionDoc } from "../controllers/auction.controller.js"
+import UserSchema from "../schema/users.schema.js"
 
 
 function logTimeExpired() {
@@ -43,6 +44,7 @@ export default () => {
         })
 
         socket.on('chat:message', async (msg) => {
+            console.log(msg)
             // console.log(msg)
             await saveMessages(msg)
             global.io.emit('chat:message', msg)
@@ -167,6 +169,12 @@ export default () => {
                 complete,
                 message: "Auction has ended"
             })
+        })
+        socket.on('getPurse',async(data)=>{
+            console.log('getPurse',{data})
+            const user = await UserSchema.findOne({_id:data.userId})
+            io.to(data.socketId).emit('getPurse', user.remainingPurse);
+
         })
     })
 

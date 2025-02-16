@@ -48,7 +48,7 @@ const groupChat = () => {
                 userId:user._id,
                 text:newMessage,
                 senderName: user.name,
-                avatar: user.imageUrl,
+                avatar: user.image,
                 socketId:socket.id
               
         }

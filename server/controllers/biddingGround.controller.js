@@ -1,5 +1,6 @@
 import BiddingGround from "../schema/bidding.schema.js"
 import Player from "../schema/player.schema.js";
+import UserSchema from  '../schema/users.schema.js'
 
 const addBid = async (data) => {
   const { playerId, bidderId, bidAmount, bidderName } = data
@@ -97,7 +98,22 @@ const soldToFunctionalities = async (data) => {
 
   const lastBid = biddingGround.bids[biddingGround.bids.length - 1];
   // console.log(lastBid)
+  const bidder = lastBid.bidderId;
+  const bidAmount = lastBid.bidAmount;
+  
+      const newUser = await UserSchema.findOneAndUpdate(
+          { _id: bidder }, // Find the user by their ID
+          { $inc: { remainingPurse: -bidAmount } }, // Decrease remainingPurse by bidAmount
+          { new: true } // Return the updated user document
+      );
+  
+      if (!newUser) {
+          console.log("User not found.");
+      } else {
+          console.log("Updated User Purse:", newUser.remainingPurse);
+      }
   biddingGround.status = "sold";
+
   biddingGround.soldTo = lastBid.bidderId; // Set the last bidder as the buyer
   const res = await biddingGround.save()
 
@@ -106,6 +122,7 @@ const soldToFunctionalities = async (data) => {
     status: "sold",
     bidder: lastBid.bidderName,
     bidAmount: lastBid.bidAmount,
+    bidderId: lastBid.bidderId
   };
 }
 
